@@ -1,13 +1,14 @@
-module SliceShow.Model (Model, init, next, prev, hash, goto) where
+module SliceShow.Model (Model, init, next, prev, hash, open) where
 
-import SliceShow.Slide exposing (Slide)
+import SliceShow.SlideData exposing (SlideData)
 import Result
 import String
 
 
 type alias Model =
   { currentSlide : Maybe Int
-  , slides : List Slide
+  , slides : List SlideData
+  , dimensions : (Int, Int)
   }
 
 
@@ -35,20 +36,21 @@ hash model =
     Just index -> "#" ++ toString (index + 1)
 
 
-goto : String -> Model -> Model
-goto hash model =
+open : String -> Model -> Model
+open hash model =
   case String.toInt (String.dropLeft 1 hash) of
     Ok int ->
       if int > 0 && int <= List.length model.slides then
         {model | currentSlide = Just (int - 1)}
       else
-        model
+        {model | currentSlide = Nothing}
     Err _ ->
-      model
+      {model | currentSlide = Nothing}
 
 
-init : List Slide -> Model
+init : List SlideData -> Model
 init slides =
   { currentSlide = Nothing
   , slides = slides
+  , dimensions = (0, 0)
   }

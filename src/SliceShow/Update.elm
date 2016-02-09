@@ -20,8 +20,14 @@ update action model =
     Index ->
       withHashChange ({model | currentSlide = Nothing})
 
-    Goto locationHash ->
-      (Model.goto locationHash model, Effects.none)
+    Goto index ->
+      withHashChange ({model | currentSlide = Just index})
+
+    Open locationHash ->
+      (Model.open locationHash model, Effects.none)
+
+    Resize dimensions ->
+      ({model | dimensions = dimensions}, Effects.none)
 
     Noop ->
       (model, Effects.none)

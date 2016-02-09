@@ -5,7 +5,12 @@ module SliceShow.Slide (Slide, slide) where
 
 import SliceShow.State exposing (State(Inactive, Hidden))
 import SliceShow.Content exposing (Content)
-import SliceShow.SlideData exposing (ProtectedSlide, lock)
+import SliceShow.Protected exposing (Protected, lock)
+import SliceShow.SlideData exposing (SlideData)
+
+
+{-| Slide type -}
+type alias Slide = Protected SlideData
 
 
 {-| Create new slide with title and items -}
@@ -15,8 +20,5 @@ slide name elements =
     { name = name
     , elements = elements
     , state = Hidden
+    , dimensions = (1024, 640)
     }
-
-
-{-| Slide type -}
-type alias Slide = ProtectedSlide

@@ -4,7 +4,7 @@
     "repository": "https://github.com/w0rm/elm-slides.git",
     "license": "MIT",
     "source-directories": [
-        "src",
+        ".",
         "../src"
     ],
     "exposed-modules": [],

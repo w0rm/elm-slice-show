@@ -1,0 +1,24 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Elm Slice Show</title>
+  <style>
+    html, head, body { padding: 0; margin: 0; }
+    body { font-family: sans-serif; background: black; }
+    a:link { text-decoration: none; color: rgb(15,102,230); }
+    a:visited { text-decoration: none; }
+    a:active { text-decoration: none; }
+    a:hover { text-decoration: underline; color: rgb(234,21,122); }
+  </style>
+</head>
+<body>
+  <script src="elm.js"></script>
+  <script>
+    Elm.fullscreen(Elm.Main, {
+      locationHash: window.location.hash,
+      windowDimensions: [window.innerWidth, window.innerHeight]
+    })
+  </script>
+</body>
+</html>
