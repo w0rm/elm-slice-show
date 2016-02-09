@@ -1,14 +1,14 @@
-import SliceShow exposing (show)
 import Html exposing (Html, text)
 import Task exposing (Task)
 import Effects exposing (Never)
+import SliceShow exposing (SliceShow)
 import SliceShow.Slide exposing (Slide, slide)
 import SliceShow.Content exposing (title, listing, hide)
 
 
-app : {html : Signal Html, tasks : Signal (Task Never ())}
+app : SliceShow
 app =
-  show
+  SliceShow.show
     [ slide
         "title1"
         [title (text "Title1")]

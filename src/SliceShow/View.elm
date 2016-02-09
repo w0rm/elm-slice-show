@@ -7,7 +7,7 @@ import SliceShow.Slide exposing (Slide)
 import SliceShow.SlideData exposing (unlock)
 
 
-view : Signal.Address (Action a) -> Model -> Html
+view : Signal.Address Action -> Model -> Html
 view address model =
   case model.currentSlide of
     Nothing -> viewListing address model
@@ -17,11 +17,11 @@ view address model =
         Just slide -> viewSlide address slide
 
 
-viewListing : Signal.Address (Action a) -> Model -> Html
+viewListing : Signal.Address Action -> Model -> Html
 viewListing address model =
   div [] (List.map (viewSlide address) model.slides)
 
 
-viewSlide : Signal.Address (Action a) -> Slide -> Html
+viewSlide : Signal.Address Action -> Slide -> Html
 viewSlide address slide =
   div [] [text (unlock slide).name]

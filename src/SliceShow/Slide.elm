@@ -7,6 +7,7 @@ import SliceShow.State exposing (State(Inactive, Hidden))
 import SliceShow.Content exposing (Content)
 import SliceShow.SlideData exposing (ProtectedSlide, lock)
 
+
 {-| Create new slide with title and items -}
 slide : String -> List Content -> Slide
 slide name elements =

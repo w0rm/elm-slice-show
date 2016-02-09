@@ -1,7 +1,7 @@
-module SliceShow (show) where
+module SliceShow (show, SliceShow) where
 {-| This module helps you start your SliceShow application.
 # Start your Application
-@docs show
+@docs SliceShow, show
 -}
 
 import StartApp
@@ -12,6 +12,17 @@ import SliceShow.Model exposing (Model, init)
 import SliceShow.Update exposing (update)
 import SliceShow.View exposing (view)
 import SliceShow.Slide exposing (Slide)
+import SliceShow.Actions as Actions
+import Keyboard
+import Signal
+import History
+
+
+{-| SliceShow app, exposes html signal and tasks signal -}
+type alias SliceShow =
+  { html : Signal Html.Html
+  , tasks : Signal (Task.Task Effects.Never ())
+  }
 
 
 {-| Start the SliceShow with your `slides`:
@@ -20,18 +31,24 @@ import SliceShow.Slide exposing (Slide)
     port tasks : Signal (Task.Task Never ())
     port tasks = app.tasks
 -}
-show :
-  List Slide ->
-  { html : Signal Html.Html
-  , tasks : Signal (Task.Task Effects.Never ())
-  }
+show : List Slide -> SliceShow
 show slides =
   let
+    onKeyDown keyCode action =
+      Signal.map
+        (always action)
+        (Signal.filter identity False (Keyboard.isDown keyCode))
+
     app = StartApp.start
       { init = (init slides, Effects.none)
       , update = update
       , view = view
-      , inputs = []
+      , inputs =
+          [ onKeyDown 37 Actions.Prev
+          , onKeyDown 39 Actions.Next
+          , onKeyDown 27 Actions.Index
+          , Signal.map Actions.Goto History.hash
+          ]
       }
   in
     { html = app.html
