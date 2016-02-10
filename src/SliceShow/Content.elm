@@ -26,5 +26,5 @@ item = Item Inactive
 hide : Content -> Content
 hide content =
   case content of
-    Container _ render elements -> Container Hidden render (List.map hide elements)
+    Container _ render elements -> Container Hidden render elements
     Item _ html -> Item Hidden html
