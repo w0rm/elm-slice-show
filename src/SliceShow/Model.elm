@@ -16,9 +16,12 @@ offset : Int -> Model -> Model
 offset offset model =
   case model.currentSlide of
     Nothing ->
-      {model | currentSlide = Just 0}
+      { model | currentSlide = Just 0 }
     Just index ->
-      {model | currentSlide = Just ((index + offset) % List.length model.slides)}
+      { model
+      | currentSlide =
+          Just ((index + offset) |> max 0 |> min (List.length model.slides - 1))
+      }
 
 
 next : Model -> Model
