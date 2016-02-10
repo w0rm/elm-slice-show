@@ -1,18 +1,18 @@
 module SliceShow.ContentData (ContentData(..), state, hasHidden, showNext) where
 
-import Html exposing (Html)
+import Html exposing (Html, Attribute)
 import SliceShow.State exposing (State(Inactive, Hidden, Active, Visited))
 
 
 type ContentData
-  = Listing State (List ContentData)
+  = Container State (List Html -> Html) (List ContentData)
   | Item State Html
 
 
 state : ContentData -> State
 state element =
   case element of
-    Listing state _ -> state
+    Container state render _ -> state
     Item state _ -> state
 
 
@@ -25,7 +25,7 @@ hasHidden elements =
           case state of
             Hidden -> True
             _ -> hasHidden rest
-        Listing state items ->
+        Container state render items ->
           case state of
             Hidden -> True
             _ -> hasHidden items || hasHidden rest
@@ -49,13 +49,13 @@ showNext elements =
           case state of
             Hidden -> Item Active html :: rest
             _ -> Item (visited state) html :: showNext rest
-        Listing state items ->
+        Container state render items ->
           case state of
             Hidden ->
-              Listing Active items :: rest
+              Container Active render items :: rest
             _ ->
               if hasHidden items then
-                Listing (visited state) (showNext items) :: rest
+                Container (visited state) render (showNext items) :: rest
               else
-                Listing (visited state) items :: showNext rest
+                Container (visited state) render items :: showNext rest
     [] -> []

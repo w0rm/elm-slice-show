@@ -4,6 +4,7 @@ import Effects exposing (Never)
 import SliceShow exposing (SliceShow)
 import Slides exposing (slides)
 
+
 sliceShow : SliceShow
 sliceShow =
   SliceShow.init slides

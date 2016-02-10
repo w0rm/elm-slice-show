@@ -1,6 +1,6 @@
-module SliceShow.Content (Content, listing, item, hide) where
+module SliceShow.Content (Content, container, item, hide) where
 {-| This module helps you define Slide content
-@docs Content, listing, item, hide
+@docs Content, container, item, hide
 -}
 
 import Html exposing (Html)
@@ -13,8 +13,8 @@ type alias Content = ContentData
 
 
 {-| List of content -}
-listing : List Content -> Content
-listing = Listing Inactive
+container : (List Html -> Html) -> List Content -> Content
+container = Container Inactive
 
 
 {-| Text item -}
@@ -26,5 +26,5 @@ item = Item Inactive
 hide : Content -> Content
 hide content =
   case content of
-    Listing _ elements -> Listing Hidden (List.map hide elements)
+    Container _ render elements -> Container Hidden render (List.map hide elements)
     Item _ html -> Item Hidden html

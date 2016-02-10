@@ -5,8 +5,7 @@ import SliceShow.ContentData exposing (ContentData, hasHidden, showNext)
 
 
 type alias SlideData =
-  { name : String
-  , state : State
+  { state : State
   , elements : List ContentData
   , dimensions : (Int, Int)
   }

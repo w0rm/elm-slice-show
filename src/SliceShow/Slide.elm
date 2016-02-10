@@ -13,12 +13,11 @@ import SliceShow.SlideData exposing (SlideData)
 type alias Slide = Protected SlideData
 
 
-{-| Create new slide with title and items -}
-slide : String -> List Content -> Slide
-slide name elements =
+{-| Create new slide with content elements -}
+slide : List Content -> Slide
+slide elements =
   lock
-    { name = name
-    , elements = elements
+    { elements = elements
     , state = Hidden
     , dimensions = (1024, 640)
     }

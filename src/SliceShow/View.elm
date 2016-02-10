@@ -24,13 +24,13 @@ view : Signal.Address Action -> Model -> Html
 view address model =
   case currentSlide model of
     Nothing ->
-      viewListing address model
+      viewContainer address model
     Just slide ->
       viewSlide address model.dimensions slide
 
 
-viewListing : Signal.Address Action -> Model -> Html
-viewListing address model =
+viewContainer : Signal.Address Action -> Model -> Html
+viewContainer address model =
   div
     [ style
         ["text-align" => "center"]
@@ -87,7 +87,7 @@ viewElements elements =
 viewElement : ContentData -> Html
 viewElement content =
   case content of
-    Listing _ items ->
-      ul [] (List.map (\e -> li [] [e]) (viewElements items))
+    Container _ render items ->
+      render (viewElements items)
     Item _ html ->
       html
