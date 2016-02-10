@@ -1,6 +1,6 @@
-module SliceShow.Model (Model, init, next, prev, hash, open) where
+module SliceShow.Model (Model, init, next, prev, hash, open, currentSlide) where
 
-import SliceShow.SlideData exposing (SlideData)
+import SliceShow.SlideData exposing (SlideData, showNextElement, hasHiddenElements)
 import Result
 import String
 
@@ -22,7 +22,15 @@ offset offset model =
 
 
 next : Model -> Model
-next = offset 1
+next model =
+  case currentSlide model of
+    Just slide ->
+      if hasHiddenElements slide then
+        replaceCurrent (showNextElement slide) model
+      else
+        offset 1 model
+    Nothing ->
+      offset 1 model
 
 
 prev : Model -> Model
@@ -34,6 +42,27 @@ hash model =
   case model.currentSlide of
     Nothing -> "#"
     Just index -> "#" ++ toString (index + 1)
+
+
+currentSlide : Model -> Maybe SlideData
+currentSlide {slides, currentSlide} =
+  Maybe.map ((flip List.drop) slides) currentSlide `Maybe.andThen` List.head
+
+
+replaceCurrent : SlideData -> Model -> Model
+replaceCurrent slide model =
+  let
+    replaceWith atIndex currentIndex currentSlide =
+      if atIndex == currentIndex then
+        slide
+      else
+        currentSlide
+  in
+    case model.currentSlide of
+      Just index ->
+        {model | slides = List.indexedMap (replaceWith index) model.slides}
+      Nothing ->
+        model
 
 
 open : String -> Model -> Model

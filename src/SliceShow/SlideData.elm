@@ -1,12 +1,22 @@
-module SliceShow.SlideData (SlideData) where
+module SliceShow.SlideData (SlideData, hasHiddenElements, showNextElement) where
 
 import SliceShow.State exposing (State(Inactive, Hidden))
-import SliceShow.Content exposing (Content)
+import SliceShow.ContentData exposing (ContentData, hasHidden, showNext)
 
 
 type alias SlideData =
   { name : String
   , state : State
-  , elements : List Content
+  , elements : List ContentData
   , dimensions : (Int, Int)
   }
+
+
+hasHiddenElements : SlideData -> Bool
+hasHiddenElements {elements} =
+  hasHidden elements
+
+
+showNextElement : SlideData -> SlideData
+showNextElement slide =
+  {slide | elements = showNext slide.elements}

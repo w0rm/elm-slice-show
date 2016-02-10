@@ -1,10 +1,12 @@
 module SliceShow.View (view) where
 
-import Html exposing (Html, div, text, a)
+import Html exposing (Html, div, ul, li, a)
 import Html.Attributes exposing (style, href)
 import SliceShow.Actions exposing (Action)
-import SliceShow.Model exposing (Model)
+import SliceShow.Model exposing (Model, currentSlide)
 import SliceShow.SlideData exposing (SlideData)
+import SliceShow.ContentData exposing(ContentData(..), state)
+import SliceShow.State exposing (State(Hidden))
 
 fit : (Int, Int) -> (Int, Int) -> Float
 fit (w1, h1) (w2, h2) =
@@ -20,7 +22,7 @@ toPx x = toString x ++ "px"
 
 view : Signal.Address Action -> Model -> Html
 view address model =
-  case Maybe.map ((flip List.drop) model.slides) model.currentSlide `Maybe.andThen` List.head of
+  case currentSlide model of
     Nothing ->
       viewListing address model
     Just slide ->
@@ -29,7 +31,11 @@ view address model =
 
 viewListing : Signal.Address Action -> Model -> Html
 viewListing address model =
-  div [] (List.indexedMap (viewSlideItem address) model.slides)
+  div
+    [ style
+        ["text-align" => "center"]
+    ]
+    (List.indexedMap (viewSlideItem address) model.slides)
 
 
 (=>) : a -> b -> (a, b)
@@ -44,7 +50,7 @@ viewSlideItem address index slide =
         , "width" => "240px"
         , "height" => "150px"
         , "display" => "inline-block"
-        , "margin" => "10px 0 0 10px"
+        , "margin" => "20px 0 0 20px"
         ]
     , href ("#" ++ toString (index + 1))
     ]
@@ -65,6 +71,23 @@ viewSlide address dimensions slide =
         , "margin-top" => toPx (snd slide.dimensions // -2)
         , "background" => "#fff"
         , "box-sizing" => "border-box"
+        , "text-align" => "left"
         ]
     ]
-    [ text slide.name ]
+    (viewElements slide.elements)
+
+
+viewElements : List ContentData -> List Html
+viewElements elements =
+  elements
+  |> List.filter (\c -> state c /= Hidden)
+  |> List.map viewElement
+
+
+viewElement : ContentData -> Html
+viewElement content =
+  case content of
+    Listing _ items ->
+      ul [] (List.map (\e -> li [] [e]) (viewElements items))
+    Item _ html ->
+      html
