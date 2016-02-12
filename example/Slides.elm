@@ -50,7 +50,7 @@ slides =
     [ [ title "Introduction to Elm"
       , richtext """Elm — functional reactive programming language that is statically typed and compiles to JavaScript"""
       , spacer
-      , richtext """### My experience""" |> hide
+      , richtext """### Andrey Kuzmin @unsoundscapes""" |> hide
       , container
           ( div
               [ style
@@ -101,7 +101,7 @@ slides =
       , code
           "elm"
           ( "plusOne : Int -> Int\n" ++
-            "plusOne y = add 1 y"
+            "plusOne y = plus 1 y"
           )
         |> hide
       , code "elm" "plusOne = (+) 1" |> hide
@@ -132,8 +132,8 @@ slides =
       , code
           "elm"
           ( "move : Int -> Int -> Circle -> Circle\n" ++
-            "move x y circle = \n" ++
-            "  {circle | coordinates = (x, y)}"
+            "move x y c = \n" ++
+            "  {c | coordinates = (x, y)}"
           )
         |> hide
       ]
@@ -245,5 +245,11 @@ slides =
           , bulletLink "Elm Slice Show" "https://github.com/w0rm/elm-slice-show"
           ]
       ]
-    , [ title "Questions?" ]
+    , [ img [src "assets/zalando.png"] [] |> item
+      , spacer
+      , bullets
+          [ bulletLink "@ZalandoTech" "https://twitter.com/zalandotech"
+          , bulletLink "Zalando Tech Blog" "https://tech.zalando.com/"
+          ]
+      ]
     ]

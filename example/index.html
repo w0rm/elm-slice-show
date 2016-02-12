@@ -14,22 +14,14 @@
   </style>
   <link rel="stylesheet" href="assets/highlight.css">
   <script src="assets/highlight.min.js"></script>
+  <script src="assets/elm.js"></script>
 </head>
 <body>
   <script>
-    var img = new Image();
-    img.onerror = function () {
-      var script = document.createElement('script');
-      script.src = 'elm.js';
-      script.onload = function () {
-        Elm.fullscreen(Elm.Main, {
-          locationHash: window.location.hash,
-          windowDimensions: [window.innerWidth, window.innerHeight]
-        });
-      }
-      document.documentElement.appendChild(script);
-    }
-    img.src = 'Main.elm';
+    Elm.fullscreen(Elm.Main, {
+      locationHash: window.location.hash,
+      windowDimensions: [window.innerWidth, window.innerHeight]
+    });
   </script>
 </body>
 </html>
