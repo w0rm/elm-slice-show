@@ -1,7 +1,7 @@
 {
     "version": "1.0.0",
-    "summary": "Elm Slides Demo",
-    "repository": "https://github.com/w0rm/elm-slides.git",
+    "summary": "Elm Slice Show Demo",
+    "repository": "https://github.com/w0rm/elm-slice-show.git",
     "license": "MIT",
     "source-directories": [
         ".",
