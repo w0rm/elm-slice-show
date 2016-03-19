@@ -1,12 +1,12 @@
 module SliceShow.Protected (Protected, unlock, lock) where
 
 
-type Protected a = Locked a
+type Protected a = Protected a
 
 
 unlock : Protected a -> a
-unlock (Locked data) = data
+unlock (Protected data) = data
 
 
 lock : a -> Protected a
-lock = Locked
+lock = Protected

@@ -8,6 +8,7 @@ import SliceShow.SlideData exposing (SlideData)
 import SliceShow.ContentData exposing(ContentData(..), state)
 import SliceShow.State exposing (State(Hidden))
 
+
 fit : (Int, Int) -> (Int, Int) -> Float
 fit (w1, h1) (w2, h2) =
   if w1 * h2 < w2 * h1 then

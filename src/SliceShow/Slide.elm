@@ -1,5 +1,5 @@
 module SliceShow.Slide (Slide, slide) where
-{-| This module helps you define Slide model
+{-| This module helps you define a slide
 @docs Slide, slide
 -}
 
@@ -13,7 +13,7 @@ import SliceShow.SlideData exposing (SlideData)
 type alias Slide = Protected SlideData
 
 
-{-| Create new slide with content elements -}
+{-| Create new slide from a list of content items -}
 slide : List Content -> Slide
 slide elements =
   lock
