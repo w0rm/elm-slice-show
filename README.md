@@ -1,3 +1,5 @@
+![logo](elm-slice-show.png)
+
 # Slice Show
 
 A simple presentation engine in Elm.
