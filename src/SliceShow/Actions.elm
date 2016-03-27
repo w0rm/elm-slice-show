@@ -1,7 +1,7 @@
 module SliceShow.Actions (Action(..)) where
 
 
-type Action
+type Action b
   = Next
   | Prev
   | Goto Int
@@ -9,3 +9,4 @@ type Action
   | Resize (Int, Int)
   | Index
   | Noop
+  | Custom b

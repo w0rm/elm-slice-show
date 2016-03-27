@@ -1,27 +1,23 @@
-module SliceShow (SliceShow, Model, init, show, setDimensions, setHash) where
+module SliceShow (SliceShow, Config, init, show, setDimensions, setHash, setView, setUpdate, setInputs) where
 {-| This module helps you start your SliceShow application.
 # Start your Application
-@docs SliceShow, Model, init, show, setDimensions, setHash
+@docs SliceShow, Config, init, show, setDimensions, setHash, setView, setUpdate, setInputs
 -}
 
 import StartApp
 import Html
 import Task
-import Effects
-import SliceShow.Model as PrivateModel
-import SliceShow.Update exposing (update)
-import SliceShow.View exposing (view)
+import Effects exposing (Effects)
+import SliceShow.Model as Model exposing (Model)
+import SliceShow.Update as Update
+import SliceShow.View as View
 import SliceShow.Slide exposing (Slide)
 import SliceShow.Actions as Actions
 import SliceShow.Protected exposing (Protected, lock, unlock)
 import Keyboard
-import Signal
 import History
 import Window
-
-
-{-| Slideshow Model type -}
-type alias Model = Protected PrivateModel.Model
+import Html exposing (text)
 
 
 {-| SliceShow app, exposes html signal and tasks signal -}
@@ -31,24 +27,71 @@ type alias SliceShow =
   }
 
 
-{-| Init Model from list of slides -}
-init : List Slide -> Model
-init slides = lock (PrivateModel.init (List.map unlock slides))
+{-| Slideshow Config type -}
+type alias Config a b = Protected (PrivateConfig a b)
+
+
+type alias PrivateConfig a b =
+  { model : Model a
+  , update : (b -> a -> (a, Effects b))
+  , view : ((Signal.Address b) -> a -> Html.Html)
+  , inputs : List (Signal b)
+  }
+
+
+{-| Init Model from the list of slides -}
+init : List (Slide a) -> Config a b
+init slides = lock
+  { model = Model.init (List.map unlock slides)
+  , view = (\_ _ -> text "")
+  , update = (\_ a -> (a, Effects.none))
+  , inputs = []
+  }
 
 
 {-| Set initial dimensions taken from port -}
-setDimensions : (Int, Int) -> Model -> Model
-setDimensions dimensions model =
+setDimensions : (Int, Int) -> Config a b -> Config a b
+setDimensions dimensions config =
   let
-    unlocked = unlock model
+    unlocked = unlock config
   in
-    lock {unlocked | dimensions = dimensions }
+    lock {unlocked | model = Model.resize dimensions unlocked.model }
 
 
 {-| Set initial hash taken from port -}
-setHash : String -> Model -> Model
-setHash hash model =
-  lock (PrivateModel.open hash (unlock model))
+setHash : String -> Config a b -> Config a b
+setHash hash config =
+  let
+    unlocked = unlock config
+  in
+    lock {unlocked | model = Model.open hash unlocked.model }
+
+
+{-| Set view for the custom content -}
+setView : ((Signal.Address b) -> a -> Html.Html) -> Config a b -> Config a b
+setView view config =
+  let
+    unlocked = unlock config
+  in
+    lock {unlocked | view = view }
+
+
+{-| Set update for the custom content -}
+setUpdate : (b -> a -> (a, Effects b)) -> Config a b -> Config a b
+setUpdate update config =
+  let
+    unlocked = unlock config
+  in
+    lock {unlocked | update = update }
+
+
+{-| Set inputs for the custom content -}
+setInputs : List (Signal b) -> Config a b -> Config a b
+setInputs inputs config =
+  let
+    unlocked = unlock config
+  in
+    lock {unlocked | inputs = inputs }
 
 
 {-| Start the SliceShow with your `slides`:
@@ -57,19 +100,22 @@ setHash hash model =
     port tasks : Signal (Task.Task Never ())
     port tasks = app.tasks
 -}
-show : Model -> SliceShow
-show model =
+show : Config a b -> SliceShow
+show config =
   let
     onKeyDown keyCode action =
       Signal.map
         (always action)
         (Signal.filter identity False (Keyboard.isDown keyCode))
 
+    {model, update, view, inputs} = unlock config
+
     app = StartApp.start
-      { init = (unlock model, Effects.none)
-      , update = update
-      , view = view
+      { init = (model, Effects.none)
+      , update = Update.update update
+      , view = View.view view
       , inputs =
+          List.map (Signal.map Actions.Custom) inputs ++
           [ onKeyDown 37 Actions.Prev
           , onKeyDown 39 Actions.Next
           , onKeyDown 27 Actions.Index

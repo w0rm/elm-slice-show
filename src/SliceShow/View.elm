@@ -2,7 +2,7 @@ module SliceShow.View (view) where
 
 import Html exposing (Html, div, ul, li, a)
 import Html.Attributes exposing (style, href)
-import SliceShow.Actions exposing (Action)
+import SliceShow.Actions as Actions exposing (Action)
 import SliceShow.Model exposing (Model, currentSlide)
 import SliceShow.SlideData exposing (SlideData)
 import SliceShow.ContentData exposing(ContentData(..), state)
@@ -21,30 +21,30 @@ toPx : Int -> String
 toPx x = toString x ++ "px"
 
 
-view : Signal.Address Action -> Model -> Html
-view address model =
+view : (Signal.Address b -> a -> Html) -> Signal.Address (Action b) -> Model a -> Html
+view renderCustom address model =
   case currentSlide model of
     Nothing ->
-      viewContainer address model
+      viewContainer renderCustom address model
     Just slide ->
-      viewSlide address model.dimensions slide
+      viewSlide renderCustom address model.dimensions slide
 
 
-viewContainer : Signal.Address Action -> Model -> Html
-viewContainer address model =
+viewContainer : (Signal.Address b -> a -> Html) -> Signal.Address (Action b) -> Model a -> Html
+viewContainer renderCustom address model =
   div
     [ style
         ["text-align" => "center"]
     ]
-    (List.indexedMap (viewSlideItem address) model.slides)
+    (List.indexedMap (viewSlideItem renderCustom address) model.slides)
 
 
 (=>) : a -> b -> (a, b)
 (=>) = (,)
 
 
-viewSlideItem : Signal.Address Action -> Int -> SlideData -> Html
-viewSlideItem address index slide =
+viewSlideItem : (Signal.Address b -> a -> Html) -> Signal.Address (Action b) -> Int -> SlideData a -> Html
+viewSlideItem renderCustom address index slide =
   a
     [ style
         [ "position" => "relative"
@@ -55,11 +55,11 @@ viewSlideItem address index slide =
         ]
     , href ("#" ++ toString (index + 1))
     ]
-    [ viewSlide address (240, 150) slide ]
+    [ viewSlide renderCustom address (240, 150) slide ]
 
 
-viewSlide : Signal.Address Action -> (Int, Int) -> SlideData -> Html
-viewSlide address dimensions slide =
+viewSlide : (Signal.Address b -> a -> Html) -> Signal.Address (Action b) -> (Int, Int) -> SlideData a -> Html
+viewSlide renderCustom address dimensions slide =
   div
     [ style
         [ "transform" => ("scale(" ++ toString (fit dimensions slide.dimensions) ++ ")")
@@ -75,20 +75,22 @@ viewSlide address dimensions slide =
         , "text-align" => "left"
         ]
     ]
-    (viewElements slide.elements)
+    (viewElements renderCustom (Signal.forwardTo address Actions.Custom) slide.elements)
 
 
-viewElements : List ContentData -> List Html
-viewElements elements =
+viewElements : (Signal.Address b -> a -> Html) -> Signal.Address b -> List (ContentData a) -> List Html
+viewElements renderCustom customAddress elements =
   elements
   |> List.filter (\c -> state c /= Hidden)
-  |> List.map viewElement
+  |> List.map (viewElement renderCustom customAddress)
 
 
-viewElement : ContentData -> Html
-viewElement content =
+viewElement : (Signal.Address b -> a -> Html) -> Signal.Address b -> ContentData a -> Html
+viewElement renderCustom customAddress content =
   case content of
     Container _ render items ->
-      render (viewElements items)
+      render (viewElements renderCustom customAddress items)
     Item _ html ->
       html
+    Custom _ data ->
+      renderCustom customAddress data

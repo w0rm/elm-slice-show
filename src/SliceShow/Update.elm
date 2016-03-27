@@ -7,8 +7,8 @@ import History
 import Task
 
 
-update : Action -> Model -> (Model, Effects Action)
-update action model =
+update : (b -> a -> (a, Effects b)) -> Action b -> Model a -> (Model a, Effects (Action b))
+update updateCustom action model =
   case action of
 
     Next ->
@@ -32,8 +32,14 @@ update action model =
     Noop ->
       (model, Effects.none)
 
+    Custom action ->
+      let
+        (newModel, effects) = Model.update updateCustom action model
+      in
+        (newModel, Effects.map Custom effects)
 
-withHashChange : Model -> (Model, Effects Action)
+
+withHashChange : Model a -> (Model a, Effects (Action b))
 withHashChange model =
   ( model
   , History.setPath (Model.hash model)
