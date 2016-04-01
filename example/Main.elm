@@ -1,16 +1,23 @@
 import Html exposing (Html)
 import Task exposing (Task)
 import Effects exposing (Never)
-import SliceShow exposing (SliceShow)
-import Slides exposing (slides)
+import SliceShow exposing (..)
+import Slides exposing (slides, update, view, inputs)
 
 
 sliceShow : SliceShow
 sliceShow =
-  SliceShow.init slides
-  |> SliceShow.setDimensions windowDimensions
-  |> SliceShow.setHash locationHash
-  |> SliceShow.show
+  {- Init the slides -}
+  init slides
+  {- Set initial dimensions and locationHash from the corresponding ports -}
+  |> setDimensions windowDimensions
+  |> setHash locationHash
+  {- Set inputs-update-view for the custom content -}
+  |> setInputs inputs
+  |> setUpdate update
+  |> setView view
+  {- Show the slides -}
+  |> show
 
 
 main : Signal Html

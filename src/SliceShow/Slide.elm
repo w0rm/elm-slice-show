@@ -10,11 +10,11 @@ import SliceShow.SlideData exposing (SlideData)
 
 
 {-| Slide type -}
-type alias Slide = Protected SlideData
+type alias Slide a = Protected (SlideData a)
 
 
 {-| Create new slide from a list of content items -}
-slide : List Content -> Slide
+slide : List (Content a) -> Slide a
 slide elements =
   lock
     { elements = elements
