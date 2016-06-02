@@ -3,17 +3,16 @@ module SliceShow.Model (Model, init, next, prev, hash, open, update, currentSlid
 import SliceShow.SlideData exposing (SlideData, showNextElement, updateCustomElement, hasHiddenElements)
 import Result
 import String
-import Effects exposing (Effects)
 
 
-type alias Model a =
+type alias Model a b =
   { currentSlide : Maybe Int
-  , slides : List (SlideData a)
+  , slides : List (SlideData a b)
   , dimensions : (Int, Int)
   }
 
 
-offset : Int -> Model a -> Model a
+offset : Int -> Model a b -> Model a b
 offset offset model =
   case model.currentSlide of
     Nothing ->
@@ -25,7 +24,7 @@ offset offset model =
       }
 
 
-next : Model a -> Model a
+next : Model a b -> Model a b
 next model =
   case currentSlide model of
     Just slide ->
@@ -37,23 +36,23 @@ next model =
       offset 1 model
 
 
-prev : Model a -> Model a
+prev : Model a b -> Model a b
 prev = offset -1
 
 
-hash : Model a -> String
+hash : Model a b -> String
 hash model =
   case model.currentSlide of
     Nothing -> "#"
     Just index -> "#" ++ toString (index + 1)
 
 
-currentSlide : Model a -> Maybe (SlideData a)
+currentSlide : Model a b -> Maybe (SlideData a b)
 currentSlide {slides, currentSlide} =
   Maybe.map ((flip List.drop) slides) currentSlide `Maybe.andThen` List.head
 
 
-replaceCurrent : SlideData a -> Model a -> Model a
+replaceCurrent : SlideData a b -> Model a b -> Model a b
 replaceCurrent slide model =
   let
     replaceWith atIndex currentIndex currentSlide =
@@ -69,7 +68,7 @@ replaceCurrent slide model =
         model
 
 
-update : (b -> a -> (a, Effects b)) -> b -> Model a -> (Model a, Effects b)
+update : (b -> a -> (a, Cmd b)) -> b -> Model a b -> (Model a b, Cmd b)
 update updateCustom customAction model =
   case currentSlide model of
     Just slide ->
@@ -78,10 +77,10 @@ update updateCustom customAction model =
       in
         (replaceCurrent newSlide model, effects)
     Nothing ->
-      (model, Effects.none)
+      (model, Cmd.none)
 
 
-open : String -> Model a -> Model a
+open : String -> Model a b -> Model a b
 open hash model =
   case String.toInt (String.dropLeft 1 hash) of
     Ok int ->
@@ -93,12 +92,12 @@ open hash model =
       {model | currentSlide = Nothing}
 
 
-resize : (Int, Int) -> Model a -> Model a
+resize : (Int, Int) -> Model a b -> Model a b
 resize dimensions model =
   {model | dimensions = dimensions}
 
 
-init : List (SlideData a) -> Model a
+init : List (SlideData a b) -> Model a b
 init slides =
   { currentSlide = Nothing
   , slides = slides

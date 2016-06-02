@@ -1,7 +1,7 @@
-module SliceShow (SliceShow, Config, init, show, setDimensions, setHash, setView, setUpdate, setInputs) where
+module SliceShow (Config, init, show, setView, setUpdate, setInputs) where
 {-| This module helps you start your SliceShow application.
 # Start your Application
-@docs SliceShow, Config, init, show, setDimensions, setHash, setView, setUpdate, setInputs
+@docs SliceShow, Config, init, show, setView, setUpdate, setInputs
 -}
 
 import StartApp
@@ -18,14 +18,7 @@ import Keyboard
 import History
 import Window
 import Html exposing (text)
-
-
-{-| SliceShow app, exposes html signal and tasks signal -}
-type alias SliceShow =
-  { html : Signal Html.Html
-  , tasks : Signal (Task.Task Effects.Never ())
-  }
-
+import Html.App as Html
 
 {-| Slideshow Config type -}
 type alias Config a b = Protected (PrivateConfig a b)
@@ -33,9 +26,9 @@ type alias Config a b = Protected (PrivateConfig a b)
 
 type alias PrivateConfig a b =
   { model : Model a
-  , update : (b -> a -> (a, Effects b))
-  , view : ((Signal.Address b) -> a -> Html.Html)
-  , inputs : List (Signal b)
+  , update : b -> a -> (a, Cmd b)
+  , view : a -> Html.Html b
+  , subscriptions : a -> Sub B
   }
 
 
@@ -43,32 +36,14 @@ type alias PrivateConfig a b =
 init : List (Slide a) -> Config a b
 init slides = lock
   { model = Model.init (List.map unlock slides)
-  , view = (\_ _ -> text "")
+  , view = (\_ -> text "")
   , update = (\_ a -> (a, Effects.none))
-  , inputs = []
+  , subscriptions = (\_ -> Sub.none)
   }
 
 
-{-| Set initial dimensions taken from port -}
-setDimensions : (Int, Int) -> Config a b -> Config a b
-setDimensions dimensions config =
-  let
-    unlocked = unlock config
-  in
-    lock {unlocked | model = Model.resize dimensions unlocked.model }
-
-
-{-| Set initial hash taken from port -}
-setHash : String -> Config a b -> Config a b
-setHash hash config =
-  let
-    unlocked = unlock config
-  in
-    lock {unlocked | model = Model.open hash unlocked.model }
-
-
 {-| Set view for the custom content -}
-setView : ((Signal.Address b) -> a -> Html.Html) -> Config a b -> Config a b
+setView : (a -> Html.Html b) -> Config a b -> Config a b
 setView view config =
   let
     unlocked = unlock config
@@ -77,7 +52,7 @@ setView view config =
 
 
 {-| Set update for the custom content -}
-setUpdate : (b -> a -> (a, Effects b)) -> Config a b -> Config a b
+setUpdate : (b -> a -> (a, Cmd b)) -> Config a b -> Config a b
 setUpdate update config =
   let
     unlocked = unlock config
@@ -86,12 +61,12 @@ setUpdate update config =
 
 
 {-| Set inputs for the custom content -}
-setInputs : List (Signal b) -> Config a b -> Config a b
-setInputs inputs config =
+setSubscriptions : (a -> Sub b) -> Config a b -> Config a b
+setSubscriptions subscriptions config =
   let
     unlocked = unlock config
   in
-    lock {unlocked | inputs = inputs }
+    lock {unlocked | subscriptions = subscriptions }
 
 
 {-| Start the SliceShow with your `slides`:
@@ -100,30 +75,22 @@ setInputs inputs config =
     port tasks : Signal (Task.Task Never ())
     port tasks = app.tasks
 -}
-show : Config a b -> SliceShow
+show : Config a b -> Program Never
 show config =
   let
-    onKeyDown keyCode action =
-      Signal.map
-        (always action)
-        (Signal.filter identity False (Keyboard.isDown keyCode))
-
-    {model, update, view, inputs} = unlock config
-
-    app = StartApp.start
-      { init = (model, Effects.none)
+    {model, update, view, subscriptions} = unlock config
+    subscriptions model =
+      Sub.batch
+        [ onKeyDown 37 Actions.Prev
+        , onKeyDown 39 Actions.Next
+        , onKeyDown 27 Actions.Index
+        , Window.resizes Actions.Resize
+        ]
+    -- TODO: calculate subscriptions for nested things
+  in
+    Html.program
+      { init = (model, Cmd.none)
       , update = Update.update update
       , view = View.view view
-      , inputs =
-          List.map (Signal.map Actions.Custom) inputs ++
-          [ onKeyDown 37 Actions.Prev
-          , onKeyDown 39 Actions.Next
-          , onKeyDown 27 Actions.Index
-          , Signal.map Actions.Open History.hash
-          , Signal.map Actions.Resize Window.dimensions
-          ]
+      , subscriptions = subscriptions
       }
-  in
-    { html = app.html
-    , tasks = app.tasks
-    }

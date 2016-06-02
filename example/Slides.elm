@@ -1,11 +1,11 @@
-module Slides (slides, update, view, inputs) where
+module Slides (slides, update, view, subscriptions) where
 
 import Html exposing (Html, h1, img, text, ul, li, a, p, div, small)
 import Html.Attributes exposing (href, style, src)
 import SliceShow.Slide exposing (..)
 import SliceShow.Content exposing (..)
+import AnimationFrame
 import Markdown
-import Effects exposing (Effects)
 import Time exposing (Time)
 
 
@@ -18,14 +18,14 @@ type alias Action = Time
 
 
 {- Update function for the custom content -}
-update : Action -> Model -> (Model, Effects Action)
+update : Action -> Model -> (Model, Cmd Action)
 update elapsed time =
-  (time + elapsed, Effects.none)
+  (time + elapsed, Cmd.none)
 
 
 {- View function for the custom content that shows elapsed time for the slide -}
-view : Signal.Address Action -> Model -> Html
-view _ time =
+view : Model -> Html Action
+view time =
   small
     [ style [("position", "absolute"), ("bottom", "0"), ("right", "0")] ]
     [ text
@@ -37,8 +37,9 @@ view _ time =
 
 
 {- Inputs for the custom content -}
-inputs : List (Signal Action)
-inputs = [Time.fps 1]
+subscriptions : Model -> Sub Action
+subscriptions _ =
+  AnimationFrame.diffs identity
 
 
 {- The list of slides -}
@@ -57,16 +58,10 @@ slides =
         ]
     ]
   , [ item (h1 [] [text "Running the engine"])
-    , code "elm" """sliceShow : SliceShow
-sliceShow =
+    , code "elm" """main : Program Never
+main =
   SliceShow.init slides
-  |> SliceShow.show
-
-main : Signal Html
-main = sliceShow.html
-
-port tasks : Signal (Task Never ())
-port tasks = sliceShow.tasks"""
+  |> SliceShow.show"""
     ]
   , [ item (h1 [] [text "Structuring the content"])
     , code "elm" """bullet : String -> Content {}
@@ -101,11 +96,11 @@ elapsed = custom 0
 slide : Slide Time
 slide = slide [item (text "Elapsed: "), elapsed]
 
-sliceShow : SliceShow
-sliceShow = init [slide]
-  |> setInputs [fps 1]
-  |> setUpdate (\\dt time -> (time + dt, Effects.none))
-  |> setView (\\_ time -> text (toString time))
+main : Program Never
+main = init [slide]
+  |> setSubscriptions (\_ -> AnimationFrame.diffs identity)
+  |> setUpdate (\\dt time -> (time + dt, Cmd.none))
+  |> setView (\\time -> text (toString time))
   |> show"""
     ]
   , [ item (h1 [] [text "Questions?"])

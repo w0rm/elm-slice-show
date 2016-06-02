@@ -2,16 +2,15 @@ module SliceShow.ContentData (ContentData(..), state, update, hasHidden, showNex
 
 import Html exposing (Html, Attribute)
 import SliceShow.State exposing (State(Inactive, Hidden, Active, Visited))
-import Effects exposing (Effects)
 
 
-type ContentData a
-  = Container State (List Html -> Html) (List (ContentData a))
-  | Item State Html
+type ContentData a b
+  = Container State (List (Html b) -> Html b) (List (ContentData a b))
+  | Item State (Html b)
   | Custom State a
 
 
-state : ContentData a -> State
+state : ContentData a b -> State
 state element =
   case element of
     Container state _ _ -> state
@@ -19,7 +18,7 @@ state element =
     Custom state _ -> state
 
 
-hasHidden : List (ContentData a) -> Bool
+hasHidden : List (ContentData a b) -> Bool
 hasHidden elements =
   case elements of
     [] ->
@@ -45,7 +44,7 @@ visited state =
     _ -> state
 
 
-showNext : List (ContentData a) -> List (ContentData a)
+showNext : List (ContentData a b) -> List (ContentData a b)
 showNext elements =
   case elements of
     [] -> []
@@ -68,7 +67,7 @@ showNext elements =
             Container (visited state) render items :: showNext rest
 
 
-update : (b -> a -> (a, Effects b)) -> b -> List (ContentData a) -> (List (ContentData a), List (Effects b))
+update : (b -> a -> (a, Cmd b)) -> b -> List (ContentData a b) -> (List (ContentData a b), List (Cmd b))
 update updateCustom action elements =
   case elements of
     [] -> ([], [])
@@ -76,25 +75,25 @@ update updateCustom action elements =
       if state /= Hidden then
         let
           (updatedSelf, selfEffect) = updateCustom action data
-          (updatedSiblings, siblingsEffects) = update updateCustom action rest
+          (updatedSiblings, siblingsCmd) = update updateCustom action rest
         in
-          if selfEffect == Effects.none then
-            (Custom state updatedSelf :: updatedSiblings, siblingsEffects)
+          if selfEffect == Cmd.none then
+            (Custom state updatedSelf :: updatedSiblings, siblingsCmd)
           else
-            (Custom state updatedSelf :: updatedSiblings, selfEffect :: siblingsEffects)
+            (Custom state updatedSelf :: updatedSiblings, selfEffect :: siblingsCmd)
       else
         let
-          (updatedSiblings, siblingsEffects) = update updateCustom action rest
+          (updatedSiblings, siblingsCmd) = update updateCustom action rest
         in
-          (Custom state data :: updatedSiblings, siblingsEffects)
+          (Custom state data :: updatedSiblings, siblingsCmd)
     Container state render items :: rest ->
       let
-        (updatedChildren, childrenEffects) = update updateCustom action items
-        (updatedSiblings, siblingsEffects) = update updateCustom action rest
+        (updatedChildren, childrenCmd) = update updateCustom action items
+        (updatedSiblings, siblingsCmd) = update updateCustom action rest
       in
-        (Container state render updatedChildren :: updatedSiblings, childrenEffects ++ siblingsEffects)
+        (Container state render updatedChildren :: updatedSiblings, childrenCmd ++ siblingsCmd)
     Item state html :: rest ->
       let
-        (updatedSiblings, siblingsEffects) = update updateCustom action rest
+        (updatedSiblings, siblingsCmd) = update updateCustom action rest
       in
-        (Item state html :: updatedSiblings, siblingsEffects)
+        (Item state html :: updatedSiblings, siblingsCmd)

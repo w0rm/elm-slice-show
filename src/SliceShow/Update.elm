@@ -2,12 +2,11 @@ module SliceShow.Update (update) where
 
 import SliceShow.Model as Model exposing (Model)
 import SliceShow.Actions exposing (Action(..))
-import Effects exposing (Effects)
 import History
 import Task
 
 
-update : (b -> a -> (a, Effects b)) -> Action b -> Model a -> (Model a, Effects (Action b))
+update : (b -> a -> (a, Cmd b)) -> Action b -> Model a -> (Model a, Cmd (Action b))
 update updateCustom action model =
   case action of
 
@@ -24,25 +23,21 @@ update updateCustom action model =
       withHashChange ({model | currentSlide = Just index})
 
     Open locationHash ->
-      (Model.open locationHash model, Effects.none)
+      (Model.open locationHash model, Cmd.none)
 
     Resize dimensions ->
-      ({model | dimensions = dimensions}, Effects.none)
+      ({model | dimensions = dimensions}, Cmd.none)
 
     Noop ->
-      (model, Effects.none)
+      (model, Cmd.none)
 
     Custom action ->
       let
         (newModel, effects) = Model.update updateCustom action model
       in
-        (newModel, Effects.map Custom effects)
+        (newModel, Cmd.map Custom effects)
 
 
-withHashChange : Model a -> (Model a, Effects (Action b))
+withHashChange : Model a -> (Model a, Cmd (Action b))
 withHashChange model =
-  ( model
-  , History.setPath (Model.hash model)
-      |> Task.map (always Noop)
-      |> Effects.task
-  )
+  ( model, Cmd.none )
