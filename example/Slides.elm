@@ -1,12 +1,12 @@
-module Slides (slides, update, view, inputs) where
+module Slides exposing (slides, update, view, subscriptions)
 
 import Html exposing (Html, h1, img, text, ul, li, a, p, div, small)
 import Html.Attributes exposing (href, style, src)
 import SliceShow.Slide exposing (..)
 import SliceShow.Content exposing (..)
 import Markdown
-import Effects exposing (Effects)
 import Time exposing (Time)
+import AnimationFrame
 
 
 {- Model type of the custom content -}
@@ -17,15 +17,23 @@ type alias Model = Time
 type alias Action = Time
 
 
+{- Type for custom content -}
+type alias CustomContent = Content Model Action
+
+
+{- Type for custom slide -}
+type alias CustomSlide = Slide Model Action
+
+
 {- Update function for the custom content -}
-update : Action -> Model -> (Model, Effects Action)
+update : Action -> Model -> (Model, Cmd Action)
 update elapsed time =
-  (time + elapsed, Effects.none)
+  (time + elapsed, Cmd.none)
 
 
 {- View function for the custom content that shows elapsed time for the slide -}
-view : Signal.Address Action -> Model -> Html
-view _ time =
+view : Model -> Html Action
+view time =
   small
     [ style [("position", "absolute"), ("bottom", "0"), ("right", "0")] ]
     [ text
@@ -37,12 +45,13 @@ view _ time =
 
 
 {- Inputs for the custom content -}
-inputs : List (Signal Action)
-inputs = [Time.fps 1]
+subscriptions : Model -> Sub Action
+subscriptions _ =
+  AnimationFrame.diffs identity
 
 
 {- The list of slides -}
-slides : List (Slide Action)
+slides : List CustomSlide
 slides =
   [ [ item (h1 [] [text "Slice Show"])
     , item (p [] [text "A simple presentation engine in Elm"])
@@ -57,55 +66,50 @@ slides =
         ]
     ]
   , [ item (h1 [] [text "Running the engine"])
-    , code "elm" """sliceShow : SliceShow
-sliceShow =
+    , code "elm" """main : Program Never
+main =
   SliceShow.init slides
-  |> SliceShow.show
-
-main : Signal Html
-main = sliceShow.html
-
-port tasks : Signal (Task Never ())
-port tasks = sliceShow.tasks"""
+  |> SliceShow.show"""
     ]
   , [ item (h1 [] [text "Structuring the content"])
-    , code "elm" """bullet : String -> Content {}
+    , code "elm" """bullet : String -> Content {} {}
 bullet str = item (li [] [text str])
 
-bullets : List (Content {}) -> Content {}
+bullets : List (Content {} {}) -> Content {} {}
 bullets = container (ul [])
 
-bulletsSlide : Slide {}
+bulletsSlide : Slide {} {}
 bulletsSlide =
   slide [bullets [bullet "first", bullet "second"]]"""
     ]
   , [ item (h1 [] [text "Syntax highlight"])
-    , code "elm" """code : String -> String -> Content {}
+    , code "elm" """code : String -> String -> Content {} {}
 code lang str =
   Markdown.toHtml
+    []
     ("```" ++ lang ++ "\\n" ++ str ++ "\\n```")
   |> item
 
-codeSlide : Slide {}
+codeSlide : Slide {} {}
 codeSlide =
   slide
-    [ code "elm" \"\"\"bullet : String -> Content {}
+    [ code "elm" \"\"\"bullet : String -> Content {} {}
   bullet str = item (li [] [text str])\"\"\"
     ]
       """
     ]
   , [ item (h1 [] [text "Custom slides"])
-    , code "elm" """elapsed : Content Time
+    , code "elm" """elapsed : Content Time Time
 elapsed = custom 0
 
-slide : Slide Time
+slide : Slide Time Time
 slide = slide [item (text "Elapsed: "), elapsed]
 
-sliceShow : SliceShow
-sliceShow = init [slide]
-  |> setInputs [fps 1]
-  |> setUpdate (\\dt time -> (time + dt, Effects.none))
-  |> setView (\\_ time -> text (toString time))
+main : Program Never
+main = init [slide]
+  |> setSubscriptions (\\_ -> AnimationFrame.diffs identity)
+  |> setUpdate (\\dt time -> (time + dt, Cmd.none))
+  |> setView (\\time -> text (toString time))
   |> show"""
     ]
   , [ item (h1 [] [text "Questions?"])
@@ -115,29 +119,29 @@ sliceShow = init [slide]
   |> List.map paddedSlide
 
 
-bullets : List (Content Model) -> Content Model
+bullets : List CustomContent -> CustomContent
 bullets =
   container (ul [])
 
 
-bullet : String -> Content Model
+bullet : String -> CustomContent
 bullet str =
   item (li [] [text str])
 
 
-bulletLink : String -> String -> Content Model
+bulletLink : String -> String -> CustomContent
 bulletLink str url =
   item (li [] [a [href url] [text str]])
 
 
 {- Syntax higlighted code block, needs highlight.js in index.html -}
-code : String -> String -> Content Model
+code : String -> String -> CustomContent
 code lang str =
-  item (Markdown.toHtml ("```" ++ lang ++ "\n" ++ str ++ "\n```"))
+  item (Markdown.toHtml [] ("```" ++ lang ++ "\n" ++ str ++ "\n```"))
 
 
 {- Custom slide that sets the padding and appends the custom content -}
-paddedSlide : List (Content Model) -> Slide Model
+paddedSlide : List CustomContent -> CustomSlide
 paddedSlide content =
   slide
     [ container

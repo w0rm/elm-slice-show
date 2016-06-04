@@ -1,19 +1,30 @@
-module SliceShow.Model (Model, init, next, prev, hash, open, update, currentSlide, resize) where
+module SliceShow.Model exposing
+  ( Model
+  , init
+  , next
+  , prev
+  , hash
+  , open
+  , update
+  , currentSlide
+  , resize
+  , subscriptions
+  )
 
-import SliceShow.SlideData exposing (SlideData, showNextElement, updateCustomElement, hasHiddenElements)
+import SliceShow.SlideData as Slide exposing (SlideData)
 import Result
 import String
-import Effects exposing (Effects)
+import Window
 
 
-type alias Model a =
+type alias Model a b =
   { currentSlide : Maybe Int
-  , slides : List (SlideData a)
-  , dimensions : (Int, Int)
+  , slides : List (SlideData a b)
+  , dimensions : Window.Size
   }
 
 
-offset : Int -> Model a -> Model a
+offset : Int -> Model a b -> Model a b
 offset offset model =
   case model.currentSlide of
     Nothing ->
@@ -25,35 +36,35 @@ offset offset model =
       }
 
 
-next : Model a -> Model a
+next : Model a b -> Model a b
 next model =
   case currentSlide model of
     Just slide ->
-      if hasHiddenElements slide then
-        replaceCurrent (showNextElement slide) model
+      if Slide.hasHiddenElements slide then
+        replaceCurrent (Slide.next slide) model
       else
         offset 1 model
     Nothing ->
       offset 1 model
 
 
-prev : Model a -> Model a
+prev : Model a b -> Model a b
 prev = offset -1
 
 
-hash : Model a -> String
+hash : Model a b -> String
 hash model =
   case model.currentSlide of
     Nothing -> "#"
     Just index -> "#" ++ toString (index + 1)
 
 
-currentSlide : Model a -> Maybe (SlideData a)
+currentSlide : Model a b -> Maybe (SlideData a b)
 currentSlide {slides, currentSlide} =
   Maybe.map ((flip List.drop) slides) currentSlide `Maybe.andThen` List.head
 
 
-replaceCurrent : SlideData a -> Model a -> Model a
+replaceCurrent : SlideData a b -> Model a b -> Model a b
 replaceCurrent slide model =
   let
     replaceWith atIndex currentIndex currentSlide =
@@ -69,19 +80,28 @@ replaceCurrent slide model =
         model
 
 
-update : (b -> a -> (a, Effects b)) -> b -> Model a -> (Model a, Effects b)
+update : (b -> a -> (a, Cmd b)) -> b -> Model a b -> (Model a b, Cmd b)
 update updateCustom customAction model =
   case currentSlide model of
     Just slide ->
       let
-        (newSlide, effects) = updateCustomElement updateCustom customAction slide
+        (newSlide, cmd) = Slide.update updateCustom customAction slide
       in
-        (replaceCurrent newSlide model, effects)
+        (replaceCurrent newSlide model, cmd)
     Nothing ->
-      (model, Effects.none)
+      (model, Cmd.none)
 
 
-open : String -> Model a -> Model a
+subscriptions : (a -> Sub b) -> Model a b -> Sub b
+subscriptions customSubscription model =
+    case currentSlide model of
+        Just slide ->
+            Slide.subscriptions customSubscription slide
+        Nothing ->
+            Sub.none
+
+
+open : String -> Model a b -> Model a b
 open hash model =
   case String.toInt (String.dropLeft 1 hash) of
     Ok int ->
@@ -93,14 +113,14 @@ open hash model =
       {model | currentSlide = Nothing}
 
 
-resize : (Int, Int) -> Model a -> Model a
+resize : Window.Size -> Model a b -> Model a b
 resize dimensions model =
   {model | dimensions = dimensions}
 
 
-init : List (SlideData a) -> Model a
+init : List (SlideData a b) -> Model a b
 init slides =
   { currentSlide = Nothing
   , slides = slides
-  , dimensions = (0, 0)
+  , dimensions = Window.Size 0 0
   }

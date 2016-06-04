@@ -1,4 +1,4 @@
-module SliceShow.Slide (Slide, slide) where
+module SliceShow.Slide exposing (Slide, slide)
 {-| This module helps you define a slide
 @docs Slide, slide
 -}
@@ -10,11 +10,11 @@ import SliceShow.SlideData exposing (SlideData)
 
 
 {-| Slide type -}
-type alias Slide a = Protected (SlideData a)
+type alias Slide a b = Protected (SlideData a b)
 
 
 {-| Create new slide from a list of content items -}
-slide : List (Content a) -> Slide a
+slide : List (Content a b) -> Slide a b
 slide elements =
   lock
     { elements = elements

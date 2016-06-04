@@ -1,34 +1,14 @@
-import Html exposing (Html)
-import Task exposing (Task)
-import Effects exposing (Never)
 import SliceShow exposing (..)
-import Slides exposing (slides, update, view, inputs)
+import Slides exposing (slides, update, view, subscriptions)
 
 
-sliceShow : SliceShow
-sliceShow =
+main : Program Never
+main =
   {- Init the slides -}
   init slides
-  {- Set initial dimensions and locationHash from the corresponding ports -}
-  |> setDimensions windowDimensions
-  |> setHash locationHash
-  {- Set inputs-update-view for the custom content -}
-  |> setInputs inputs
+  {- Set subscriptions-update-view for the custom content -}
+  |> setSubscriptions subscriptions
   |> setUpdate update
   |> setView view
   {- Show the slides -}
   |> show
-
-
-main : Signal Html
-main = sliceShow.html
-
-
-port tasks : Signal (Task Never ())
-port tasks = sliceShow.tasks
-
-
-port windowDimensions : (Int, Int)
-
-
-port locationHash : String

@@ -1,13 +1,10 @@
-module SliceShow (SliceShow, Config, init, show, setDimensions, setHash, setView, setUpdate, setInputs) where
+module SliceShow exposing (Config, init, show, setView, setUpdate, setSubscriptions)
 {-| This module helps you start your SliceShow application.
 # Start your Application
-@docs SliceShow, Config, init, show, setDimensions, setHash, setView, setUpdate, setInputs
+@docs Config, init, show, setView, setUpdate, setSubscriptions
 -}
 
-import StartApp
 import Html
-import Task
-import Effects exposing (Effects)
 import SliceShow.Model as Model exposing (Model)
 import SliceShow.Update as Update
 import SliceShow.View as View
@@ -15,60 +12,35 @@ import SliceShow.Slide exposing (Slide)
 import SliceShow.Actions as Actions
 import SliceShow.Protected exposing (Protected, lock, unlock)
 import Keyboard
-import History
 import Window
-import Html exposing (text)
-
-
-{-| SliceShow app, exposes html signal and tasks signal -}
-type alias SliceShow =
-  { html : Signal Html.Html
-  , tasks : Signal (Task.Task Effects.Never ())
-  }
-
+import Html exposing (Html, text)
+import Navigation
+import Task
 
 {-| Slideshow Config type -}
 type alias Config a b = Protected (PrivateConfig a b)
 
 
 type alias PrivateConfig a b =
-  { model : Model a
-  , update : (b -> a -> (a, Effects b))
-  , view : ((Signal.Address b) -> a -> Html.Html)
-  , inputs : List (Signal b)
+  { model : Model a b
+  , update : b -> a -> (a, Cmd b)
+  , view : a -> Html b
+  , subscriptions : a -> Sub b
   }
 
 
 {-| Init Model from the list of slides -}
-init : List (Slide a) -> Config a b
+init : List (Slide a b) -> Config a b
 init slides = lock
   { model = Model.init (List.map unlock slides)
-  , view = (\_ _ -> text "")
-  , update = (\_ a -> (a, Effects.none))
-  , inputs = []
+  , view = (\_ -> text "")
+  , update = (\_ a -> (a, Cmd.none))
+  , subscriptions = (\_ -> Sub.none)
   }
 
 
-{-| Set initial dimensions taken from port -}
-setDimensions : (Int, Int) -> Config a b -> Config a b
-setDimensions dimensions config =
-  let
-    unlocked = unlock config
-  in
-    lock {unlocked | model = Model.resize dimensions unlocked.model }
-
-
-{-| Set initial hash taken from port -}
-setHash : String -> Config a b -> Config a b
-setHash hash config =
-  let
-    unlocked = unlock config
-  in
-    lock {unlocked | model = Model.open hash unlocked.model }
-
-
 {-| Set view for the custom content -}
-setView : ((Signal.Address b) -> a -> Html.Html) -> Config a b -> Config a b
+setView : (a -> Html.Html b) -> Config a b -> Config a b
 setView view config =
   let
     unlocked = unlock config
@@ -77,7 +49,7 @@ setView view config =
 
 
 {-| Set update for the custom content -}
-setUpdate : (b -> a -> (a, Effects b)) -> Config a b -> Config a b
+setUpdate : (b -> a -> (a, Cmd b)) -> Config a b -> Config a b
 setUpdate update config =
   let
     unlocked = unlock config
@@ -86,12 +58,12 @@ setUpdate update config =
 
 
 {-| Set inputs for the custom content -}
-setInputs : List (Signal b) -> Config a b -> Config a b
-setInputs inputs config =
+setSubscriptions : (a -> Sub b) -> Config a b -> Config a b
+setSubscriptions subscriptions config =
   let
     unlocked = unlock config
   in
-    lock {unlocked | inputs = inputs }
+    lock {unlocked | subscriptions = subscriptions }
 
 
 {-| Start the SliceShow with your `slides`:
@@ -100,30 +72,27 @@ setInputs inputs config =
     port tasks : Signal (Task.Task Never ())
     port tasks = app.tasks
 -}
-show : Config a b -> SliceShow
+show : Config a b -> Program Never
 show config =
   let
-    onKeyDown keyCode action =
-      Signal.map
-        (always action)
-        (Signal.filter identity False (Keyboard.isDown keyCode))
-
-    {model, update, view, inputs} = unlock config
-
-    app = StartApp.start
-      { init = (model, Effects.none)
-      , update = Update.update update
-      , view = View.view view
-      , inputs =
-          List.map (Signal.map Actions.Custom) inputs ++
-          [ onKeyDown 37 Actions.Prev
-          , onKeyDown 39 Actions.Next
-          , onKeyDown 27 Actions.Index
-          , Signal.map Actions.Open History.hash
-          , Signal.map Actions.Resize Window.dimensions
-          ]
-      }
+    {model, update, view, subscriptions} = unlock config
   in
-    { html = app.html
-    , tasks = app.tasks
-    }
+    Navigation.program
+      (Navigation.makeParser .hash)
+      { init = \hash -> (Model.open hash model, Task.perform Actions.Resize Actions.Resize Window.size)
+      , update = Update.update update
+      , urlUpdate = \hash -> Update.update update (Actions.Open hash)
+      , view = View.view view
+      , subscriptions = \model ->
+          Sub.batch
+            [ Keyboard.downs (\code ->
+                case code of
+                  37 -> Actions.Prev
+                  39 -> Actions.Next
+                  27 -> Actions.Index
+                  _ -> Actions.Noop
+              )
+            , Window.resizes Actions.Resize
+            , Sub.map Actions.Custom (Model.subscriptions subscriptions model)
+            ]
+      }
