@@ -2,7 +2,7 @@
 
 # Slice Show
 
-A simple presentation engine in Elm 0.16.
+A simple presentation engine in Elm.
 
 For usage please [check the example](https://github.com/w0rm/elm-slice-show/tree/master/example).
 
