@@ -1,7 +1,7 @@
-module SliceShow.SlideData (SlideData, hasHiddenElements, showNextElement, updateCustomElement) where
+module SliceShow.SlideData exposing (SlideData, hasHiddenElements, next, update, subscriptions)
 
 import SliceShow.State exposing (State(Inactive, Hidden))
-import SliceShow.ContentData exposing (ContentData, hasHidden, showNext, update)
+import SliceShow.ContentData as Content exposing (ContentData)
 
 
 type alias SlideData a b =
@@ -11,19 +11,24 @@ type alias SlideData a b =
   }
 
 
-updateCustomElement : (b -> a -> (a, Cmd b)) -> b -> SlideData a b -> (SlideData a b, Cmd b)
-updateCustomElement updateCustom customAction slide =
+update : (b -> a -> (a, Cmd b)) -> b -> SlideData a b -> (SlideData a b, Cmd b)
+update updateCustom customAction slide =
   let
-    (newElements, effects) = update updateCustom customAction slide.elements
+    (newElements, effects) = Content.update updateCustom customAction slide.elements
   in
     ({slide | elements = newElements}, Cmd.batch effects)
 
 
+subscriptions : (a -> Sub b) -> SlideData a b -> Sub b
+subscriptions customSubscription slide =
+    Sub.batch (Content.subscriptions customSubscription slide.elements)
+
+
 hasHiddenElements : SlideData a b -> Bool
 hasHiddenElements {elements} =
-  hasHidden elements
+  Content.hasHidden elements
 
 
-showNextElement : SlideData a b -> SlideData a b
-showNextElement slide =
-  {slide | elements = showNext slide.elements}
+next : SlideData a b -> SlideData a b
+next slide =
+  {slide | elements = Content.next slide.elements}

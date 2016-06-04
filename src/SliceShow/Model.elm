@@ -1,14 +1,26 @@
-module SliceShow.Model (Model, init, next, prev, hash, open, update, currentSlide, resize) where
+module SliceShow.Model exposing
+  ( Model
+  , init
+  , next
+  , prev
+  , hash
+  , open
+  , update
+  , currentSlide
+  , resize
+  , subscriptions
+  )
 
-import SliceShow.SlideData exposing (SlideData, showNextElement, updateCustomElement, hasHiddenElements)
+import SliceShow.SlideData as Slide exposing (SlideData)
 import Result
 import String
+import Window
 
 
 type alias Model a b =
   { currentSlide : Maybe Int
   , slides : List (SlideData a b)
-  , dimensions : (Int, Int)
+  , dimensions : Window.Size
   }
 
 
@@ -28,8 +40,8 @@ next : Model a b -> Model a b
 next model =
   case currentSlide model of
     Just slide ->
-      if hasHiddenElements slide then
-        replaceCurrent (showNextElement slide) model
+      if Slide.hasHiddenElements slide then
+        replaceCurrent (Slide.next slide) model
       else
         offset 1 model
     Nothing ->
@@ -73,11 +85,20 @@ update updateCustom customAction model =
   case currentSlide model of
     Just slide ->
       let
-        (newSlide, effects) = updateCustomElement updateCustom customAction slide
+        (newSlide, cmd) = Slide.update updateCustom customAction slide
       in
-        (replaceCurrent newSlide model, effects)
+        (replaceCurrent newSlide model, cmd)
     Nothing ->
       (model, Cmd.none)
+
+
+subscriptions : (a -> Sub b) -> Model a b -> Sub b
+subscriptions customSubscription model =
+    case currentSlide model of
+        Just slide ->
+            Slide.subscriptions customSubscription slide
+        Nothing ->
+            Sub.none
 
 
 open : String -> Model a b -> Model a b
@@ -92,7 +113,7 @@ open hash model =
       {model | currentSlide = Nothing}
 
 
-resize : (Int, Int) -> Model a b -> Model a b
+resize : Window.Size -> Model a b -> Model a b
 resize dimensions model =
   {model | dimensions = dimensions}
 
@@ -101,5 +122,5 @@ init : List (SlideData a b) -> Model a b
 init slides =
   { currentSlide = Nothing
   , slides = slides
-  , dimensions = (0, 0)
+  , dimensions = Window.Size 0 0
   }

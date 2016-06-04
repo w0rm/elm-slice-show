@@ -1,4 +1,4 @@
-module SliceShow.Protected (Protected, unlock, lock) where
+module SliceShow.Protected exposing (Protected, unlock, lock)
 
 
 type Protected a = Protected a

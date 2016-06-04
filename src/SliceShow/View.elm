@@ -1,12 +1,14 @@
-module SliceShow.View (view) where
+module SliceShow.View exposing (view)
 
 import Html exposing (Html, div, ul, li, a)
+import Html.App as Html
 import Html.Attributes exposing (style, href)
 import SliceShow.Actions as Actions exposing (Action)
 import SliceShow.Model exposing (Model, currentSlide)
 import SliceShow.SlideData exposing (SlideData)
 import SliceShow.ContentData exposing(ContentData(..), state)
 import SliceShow.State exposing (State(Hidden))
+import Window
 
 
 fit : (Int, Int) -> (Int, Int) -> Float
@@ -21,7 +23,7 @@ toPx : Int -> String
 toPx x = toString x ++ "px"
 
 
-view : (a -> Html b) -> Model a -> Html b
+view : (a -> Html b) -> Model a b -> Html (Action b)
 view renderCustom model =
   case currentSlide model of
     Nothing ->
@@ -30,7 +32,7 @@ view renderCustom model =
       viewSlide renderCustom model.dimensions slide
 
 
-viewContainer : (a -> Html b) -> Model a -> Html b
+viewContainer : (a -> Html b) -> Model a b -> Html (Action b)
 viewContainer renderCustom model =
   div
     [ style
@@ -43,7 +45,7 @@ viewContainer renderCustom model =
 (=>) = (,)
 
 
-viewSlideItem : (a -> Html b) -> Int -> SlideData a -> Html b
+viewSlideItem : (a -> Html b) -> Int -> SlideData a b -> Html (Action b)
 viewSlideItem renderCustom index slide =
   a
     [ style
@@ -55,14 +57,14 @@ viewSlideItem renderCustom index slide =
         ]
     , href ("#" ++ toString (index + 1))
     ]
-    [ viewSlide renderCustom (240, 150) slide ]
+    [ viewSlide renderCustom (Window.Size 240 150) slide ]
 
 
-viewSlide : (a -> Html b) -> (Int, Int) -> SlideData a -> Html b
-viewSlide renderCustom dimensions slide =
+viewSlide : (a -> Html b) -> Window.Size -> SlideData a b -> Html (Action b)
+viewSlide renderCustom {width, height} slide =
   div
     [ style
-        [ "transform" => ("scale(" ++ toString (fit dimensions slide.dimensions) ++ ")")
+        [ "transform" => ("scale(" ++ toString (fit (width, height) slide.dimensions) ++ ")")
         , "width" => toPx (fst slide.dimensions)
         , "height" => toPx (snd slide.dimensions)
         , "position" => "absolute"
@@ -75,17 +77,18 @@ viewSlide renderCustom dimensions slide =
         , "text-align" => "left"
         ]
     ]
-    (viewElements renderCustom slide.elements |> Html.map Actions.Custom)
+    (viewElements renderCustom slide.elements)
+  |> Html.map Actions.Custom
 
 
-viewElements : (a -> Html b) -> List (ContentData a) -> List Html b
+viewElements : (a -> Html b) -> List (ContentData a b) -> List (Html b)
 viewElements renderCustom elements =
   elements
   |> List.filter (\c -> state c /= Hidden)
-  |> List.map (viewElement renderCustom customAddress)
+  |> List.map (viewElement renderCustom)
 
 
-viewElement : (a -> Html b) -> ContentData a -> Html b
+viewElement : (a -> Html b) -> ContentData a b -> Html b
 viewElement renderCustom content =
   case content of
     Container _ render items ->

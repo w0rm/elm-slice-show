@@ -1,4 +1,4 @@
-module SliceShow.State (State(..), activate) where
+module SliceShow.State exposing (State(..), activate)
 
 
 type State

@@ -1,4 +1,4 @@
-module SliceShow.Content (Content, container, item, custom, hide) where
+module SliceShow.Content exposing (Content, container, item, custom, hide)
 {-| This module helps you define Slide content
 @docs Content, item, container, custom, hide
 -}

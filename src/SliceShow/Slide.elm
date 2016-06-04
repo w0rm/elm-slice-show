@@ -1,4 +1,4 @@
-module SliceShow.Slide (Slide, slide) where
+module SliceShow.Slide exposing (Slide, slide)
 {-| This module helps you define a slide
 @docs Slide, slide
 -}

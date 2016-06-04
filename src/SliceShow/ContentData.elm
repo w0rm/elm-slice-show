@@ -1,4 +1,4 @@
-module SliceShow.ContentData (ContentData(..), state, update, hasHidden, showNext) where
+module SliceShow.ContentData exposing (ContentData(..), state, update, hasHidden, next, subscriptions)
 
 import Html exposing (Html, Attribute)
 import SliceShow.State exposing (State(Inactive, Hidden, Active, Visited))
@@ -44,27 +44,45 @@ visited state =
     _ -> state
 
 
-showNext : List (ContentData a b) -> List (ContentData a b)
-showNext elements =
+next : List (ContentData a b) -> List (ContentData a b)
+next elements =
   case elements of
     [] -> []
     Item state html :: rest ->
       case state of
         Hidden -> Item Active html :: rest
-        _ -> Item (visited state) html :: showNext rest
+        _ -> Item (visited state) html :: next rest
     Custom state data :: rest ->
       case state of
         Hidden -> Custom Active data :: rest
-        _ -> Custom (visited state) data :: showNext rest
+        _ -> Custom (visited state) data :: next rest
     Container state render items :: rest ->
       case state of
         Hidden ->
           Container Active render items :: rest
         _ ->
           if hasHidden items then
-            Container (visited state) render (showNext items) :: rest
+            Container (visited state) render (next items) :: rest
           else
-            Container (visited state) render items :: showNext rest
+            Container (visited state) render items :: next rest
+
+
+subscriptions : (a -> Sub b) -> List (ContentData a b) -> List (Sub b)
+subscriptions customSubscription elements =
+  case elements of
+    [] -> []
+    Custom state data :: rest ->
+      if state /= Hidden then
+        customSubscription data :: subscriptions customSubscription rest
+      else
+        subscriptions customSubscription rest
+    Container state render items :: rest ->
+      if state /= Hidden then
+        subscriptions customSubscription items ++ subscriptions customSubscription rest
+      else
+        subscriptions customSubscription rest
+    _ :: rest ->
+      subscriptions customSubscription rest
 
 
 update : (b -> a -> (a, Cmd b)) -> b -> List (ContentData a b) -> (List (ContentData a b), List (Cmd b))

@@ -1,4 +1,6 @@
-module SliceShow.Actions (Action(..)) where
+module SliceShow.Actions exposing (Action(..))
+
+import Window
 
 
 type Action b
@@ -6,7 +8,7 @@ type Action b
   | Prev
   | Goto Int
   | Open String
-  | Resize (Int, Int)
+  | Resize Window.Size
   | Index
   | Noop
   | Custom b
