@@ -65,7 +65,19 @@ viewSlideItem renderCustom index slide =
         }
         (Actions.Goto index |> Json.succeed)
     ]
-    [ viewSlide renderCustom (Window.Size 240 150) slide ]
+    [ viewSlide renderCustom (Window.Size 240 150) slide
+    , a
+        [ style
+            [ "position" => "absolute"
+            , "left" => "0"
+            , "top" => "0"
+            , "width" => "240px"
+            , "height" => "150px"
+            ]
+        , href ("#" ++ toString (index + 1))
+        ]
+        []
+    ]
 
 
 viewSlide : (a -> Html b) -> Window.Size -> SlideData a b -> Html (Action b)
