@@ -3,12 +3,14 @@ module SliceShow.View exposing (view)
 import Html exposing (Html, div, ul, li, a)
 import Html.App as Html
 import Html.Attributes exposing (style, href)
+import Html.Events exposing (onWithOptions)
 import SliceShow.Actions as Actions exposing (Action)
 import SliceShow.Model exposing (Model, currentSlide)
 import SliceShow.SlideData exposing (SlideData)
 import SliceShow.ContentData exposing(ContentData(..), state)
 import SliceShow.State exposing (State(Hidden))
 import Window
+import Json.Decode as Json
 
 
 fit : (Int, Int) -> (Int, Int) -> Float
@@ -47,15 +49,21 @@ viewContainer renderCustom model =
 
 viewSlideItem : (a -> Html b) -> Int -> SlideData a b -> Html (Action b)
 viewSlideItem renderCustom index slide =
-  a
+  div
     [ style
         [ "position" => "relative"
         , "width" => "240px"
         , "height" => "150px"
         , "display" => "inline-block"
         , "margin" => "20px 0 0 20px"
+        , "cursor" => "pointer"
         ]
-    , href ("#" ++ toString (index + 1))
+    , onWithOptions
+        "click"
+        { preventDefault = True
+        , stopPropagation = False
+        }
+        (Actions.Goto index |> Json.succeed)
     ]
     [ viewSlide renderCustom (Window.Size 240 150) slide ]
 

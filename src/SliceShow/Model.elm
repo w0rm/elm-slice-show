@@ -32,7 +32,9 @@ offset offset model =
     Just index ->
       { model
       | currentSlide =
-          Just (index + offset |> max 0 |> min (List.length model.slides - 1))
+          index + offset
+          |> clamp 0 (List.length model.slides - 1)
+          |> Just
       }
 
 
