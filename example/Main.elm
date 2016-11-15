@@ -1,14 +1,14 @@
+module Main exposing (..)
+
 import SliceShow exposing (..)
 import Slides exposing (slides, update, view, subscriptions)
 
 
-main : Program Never
+main : Program Never (SliceShow.Model Slides.Model Slides.Message) (SliceShow.Message Slides.Message)
 main =
-  {- Init the slides -}
-  init slides
-  {- Set subscriptions-update-view for the custom content -}
-  |> setSubscriptions subscriptions
-  |> setUpdate update
-  |> setView view
-  {- Show the slides -}
-  |> show
+    slides
+        |> init
+        |> setSubscriptions subscriptions
+        |> setUpdate update
+        |> setView view
+        |> show

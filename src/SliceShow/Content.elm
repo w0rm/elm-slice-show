@@ -1,4 +1,5 @@
 module SliceShow.Content exposing (Content, container, item, custom, hide)
+
 {-| This module helps you define Slide content
 @docs Content, item, container, custom, hide
 -}
@@ -8,29 +9,43 @@ import SliceShow.State exposing (State(Inactive, Hidden))
 import SliceShow.ContentData exposing (ContentData(..))
 
 
-{-| Content type -}
-type alias Content a b = ContentData a b
+{-| Content type
+-}
+type alias Content a b =
+    ContentData a b
 
 
-{-| Single content item -}
+{-| Single content item
+-}
 item : Html b -> Content a b
-item = Item Inactive
+item =
+    Item Inactive
 
 
-{-| Custom content item -}
+{-| Custom content item
+-}
 custom : a -> Content a b
-custom = Custom Inactive
+custom =
+    Custom Inactive
 
 
-{-| A group of content items -}
-container : (List (Html b) -> Html b) -> List (Content a b) -> (Content a b)
-container = Container Inactive
+{-| A group of content items
+-}
+container : (List (Html b) -> Html b) -> List (Content a b) -> Content a b
+container =
+    Container Inactive
 
 
-{-| Hide content -}
+{-| Hide content
+-}
 hide : Content a b -> Content a b
 hide content =
-  case content of
-    Container _ render elements -> Container Hidden render elements
-    Item _ html -> Item Hidden html
-    Custom _ data -> Custom Hidden data
+    case content of
+        Container _ render elements ->
+            Container Hidden render elements
+
+        Item _ html ->
+            Item Hidden html
+
+        Custom _ data ->
+            Custom Hidden data
