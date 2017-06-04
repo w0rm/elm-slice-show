@@ -1,15 +1,5 @@
-module SliceShow.Protected exposing (Protected, unlock, lock)
+module SliceShow.Protected exposing (Protected(..))
 
 
 type Protected a
     = Protected a
-
-
-unlock : Protected a -> a
-unlock (Protected data) =
-    data
-
-
-lock : a -> Protected a
-lock =
-    Protected

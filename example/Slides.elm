@@ -9,50 +9,39 @@ import Time exposing (Time)
 import AnimationFrame
 
 
-{- Model type of the custom content -}
-
-
+{-| Model type of the custom content
+-}
 type alias Model =
     Time
 
 
-
-{- Message type for the custom content -}
-
-
+{-| Message type for the custom content
+-}
 type alias Message =
     Time
 
 
-
-{- Type for custom content -}
-
-
+{-| Type for custom content
+-}
 type alias CustomContent =
     Content Model Message
 
 
-
-{- Type for custom slide -}
-
-
+{-| Type for custom slide
+-}
 type alias CustomSlide =
     Slide Model Message
 
 
-
-{- Update function for the custom content -}
-
-
+{-| Update function for the custom content
+-}
 update : Message -> Model -> ( Model, Cmd Message )
 update elapsed time =
     ( time + elapsed, Cmd.none )
 
 
-
-{- View function for the custom content that shows elapsed time for the slide -}
-
-
+{-| View function for the custom content that shows elapsed time for the slide
+-}
 view : Model -> Html Message
 view time =
     small
@@ -65,19 +54,15 @@ view time =
         ]
 
 
-
-{- Inputs for the custom content -}
-
-
+{-| Inputs for the custom content
+-}
 subscriptions : Model -> Sub Message
 subscriptions _ =
     AnimationFrame.diffs identity
 
 
-
-{- The list of slides -}
-
-
+{-| The list of slides
+-}
 slides : List CustomSlide
 slides =
     [ [ item (h1 [] [ text "Slice Show" ])
@@ -161,19 +146,15 @@ bulletLink str url =
     item (li [] [ a [ href url ] [ text str ] ])
 
 
-
-{- Syntax higlighted code block, needs highlight.js in index.html -}
-
-
+{-| Syntax higlighted code block, needs highlight.js in index.html
+-}
 code : String -> String -> CustomContent
 code lang str =
     item (Markdown.toHtml [] ("```" ++ lang ++ "\n" ++ str ++ "\n```"))
 
 
-
-{- Custom slide that sets the padding and appends the custom content -}
-
-
+{-| Custom slide that sets the padding and appends the custom content
+-}
 paddedSlide : List CustomContent -> CustomSlide
 paddedSlide content =
     slide
