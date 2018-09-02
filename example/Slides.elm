@@ -1,24 +1,23 @@
-module Slides exposing (slides, update, view, subscriptions, Model, Message)
+module Slides exposing (Message, Model, slides, subscriptions, update, view)
 
-import Html exposing (Html, h1, img, text, ul, li, a, p, div, small)
-import Html.Attributes exposing (href, style, src)
-import SliceShow.Slide exposing (..)
-import SliceShow.Content exposing (..)
+import Browser.Events exposing (onAnimationFrameDelta)
+import Html exposing (Html, a, div, h1, img, li, p, small, text, ul)
+import Html.Attributes exposing (href, src, style)
 import Markdown
-import Time exposing (Time)
-import AnimationFrame
+import SliceShow.Content exposing (..)
+import SliceShow.Slide exposing (..)
 
 
 {-| Model type of the custom content
 -}
 type alias Model =
-    Time
+    Float
 
 
 {-| Message type for the custom content
 -}
 type alias Message =
-    Time
+    Float
 
 
 {-| Type for custom content
@@ -45,10 +44,10 @@ update elapsed time =
 view : Model -> Html Message
 view time =
     small
-        [ style [ ( "position", "absolute" ), ( "bottom", "0" ), ( "right", "0" ) ] ]
+        [ style "position" "absolute", style "bottom" "0", style "right" "0" ]
         [ text
             ("the slide is visible for "
-                ++ (Time.inSeconds time |> round |> toString)
+                ++ (round time // 1000 |> String.fromInt)
                 ++ " seconds"
             )
         ]
@@ -58,7 +57,7 @@ view time =
 -}
 subscriptions : Model -> Sub Message
 subscriptions _ =
-    AnimationFrame.diffs identity
+    onAnimationFrameDelta identity
 
 
 {-| The list of slides
@@ -159,6 +158,6 @@ paddedSlide : List CustomContent -> CustomSlide
 paddedSlide content =
     slide
         [ container
-            (div [ style [ ( "padding", "50px 100px" ) ] ])
+            (div [ style "padding" "50px 100px" ])
             (content ++ [ custom 0 ])
         ]

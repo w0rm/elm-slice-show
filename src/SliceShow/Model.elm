@@ -1,32 +1,33 @@
-module SliceShow.Model
-    exposing
-        ( Model
-        , init
-        , next
-        , prev
-        , hash
-        , open
-        , update
-        , currentSlide
-        , resize
-        , subscriptions
-        )
+module SliceShow.Model exposing
+    ( Model
+    , currentSlide
+    , hash
+    , init
+    , next
+    , open
+    , prev
+    , resize
+    , subscriptions
+    , update
+    )
 
-import SliceShow.SlideData as Slide exposing (SlideData)
+import Browser.Navigation exposing (Key)
 import Result
+import SliceShow.SlideData as Slide exposing (SlideData)
 import String
-import Window
 
 
 type alias Model a b =
     { currentSlide : Maybe Int
     , slides : List (SlideData a b)
-    , dimensions : Window.Size
+    , width : Int
+    , height : Int
+    , key : Key
     }
 
 
 offset : Int -> Model a b -> Model a b
-offset offset model =
+offset offset_ model =
     case model.currentSlide of
         Nothing ->
             { model | currentSlide = Just 0 }
@@ -35,7 +36,7 @@ offset offset model =
             { model
                 | currentSlide =
                     index
-                        + offset
+                        + offset_
                         |> clamp 0 (List.length model.slides - 1)
                         |> Just
             }
@@ -47,6 +48,7 @@ next model =
         Just slide ->
             if Slide.hasHiddenElements slide then
                 replaceCurrent (Slide.next slide) model
+
             else
                 offset 1 model
 
@@ -66,29 +68,32 @@ hash model =
             "#"
 
         Just index ->
-            "#" ++ toString (index + 1)
+            "#" ++ String.fromInt (index + 1)
 
 
 currentSlide : Model a b -> Maybe (SlideData a b)
-currentSlide { slides, currentSlide } =
-    Maybe.map ((flip List.drop) slides) currentSlide |> Maybe.andThen List.head
+currentSlide m =
+    m.currentSlide
+        |> Maybe.map (\currentSlide_ -> List.drop currentSlide_ m.slides)
+        |> Maybe.andThen List.head
 
 
 replaceCurrent : SlideData a b -> Model a b -> Model a b
 replaceCurrent slide model =
     let
-        replaceWith atIndex currentIndex currentSlide =
+        replaceWith atIndex currentIndex currentSlide_ =
             if atIndex == currentIndex then
                 slide
-            else
-                currentSlide
-    in
-        case model.currentSlide of
-            Just index ->
-                { model | slides = List.indexedMap (replaceWith index) model.slides }
 
-            Nothing ->
-                model
+            else
+                currentSlide_
+    in
+    case model.currentSlide of
+        Just index ->
+            { model | slides = List.indexedMap (replaceWith index) model.slides }
+
+        Nothing ->
+            model
 
 
 update : (b -> a -> ( a, Cmd b )) -> b -> Model a b -> ( Model a b, Cmd b )
@@ -99,7 +104,7 @@ update updateCustom customAction model =
                 ( newSlide, cmd ) =
                     Slide.update updateCustom customAction slide
             in
-                ( replaceCurrent newSlide model, cmd )
+            ( replaceCurrent newSlide model, cmd )
 
         Nothing ->
             ( model, Cmd.none )
@@ -115,27 +120,30 @@ subscriptions customSubscription model =
             Sub.none
 
 
-open : String -> Model a b -> Model a b
-open hash model =
-    case String.toInt (String.dropLeft 1 hash) of
-        Ok int ->
+open : Maybe String -> Model a b -> Model a b
+open maybeFragment model =
+    case Maybe.andThen String.toInt maybeFragment of
+        Just int ->
             if int > 0 && int <= List.length model.slides then
                 { model | currentSlide = Just (int - 1) }
+
             else
                 { model | currentSlide = Nothing }
 
-        Err _ ->
+        Nothing ->
             { model | currentSlide = Nothing }
 
 
-resize : Window.Size -> Model a b -> Model a b
-resize dimensions model =
-    { model | dimensions = dimensions }
+resize : Int -> Int -> Model a b -> Model a b
+resize width height model =
+    { model | width = width, height = height }
 
 
-init : List (SlideData a b) -> Model a b
-init slides =
+init : List (SlideData a b) -> Key -> Model a b
+init slides key =
     { currentSlide = Nothing
     , slides = slides
-    , dimensions = Window.Size 0 0
+    , width = 0
+    , height = 0
+    , key = key
     }

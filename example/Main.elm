@@ -1,10 +1,10 @@
-module Main exposing (..)
+module Main exposing (main)
 
 import SliceShow exposing (..)
-import Slides exposing (slides, update, view, subscriptions)
+import Slides exposing (slides, subscriptions, update, view)
 
 
-main : Program Never (SliceShow.Model Slides.Model Slides.Message) (SliceShow.Message Slides.Message)
+main : Program () (SliceShow.Model Slides.Model Slides.Message) (SliceShow.Message Slides.Message)
 main =
     slides
         |> init

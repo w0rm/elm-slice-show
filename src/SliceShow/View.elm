@@ -1,28 +1,28 @@
 module SliceShow.View exposing (view)
 
-import Html exposing (Html, div, ul, li, a)
-import Html.Attributes exposing (style, href)
-import Html.Events exposing (onWithOptions)
+import Html exposing (Html, a, div, li, ul)
+import Html.Attributes exposing (href, style)
+import Html.Events exposing (custom)
+import Json.Decode as Json
+import SliceShow.ContentData exposing (ContentData(..), state)
 import SliceShow.Messages as Messages exposing (Message)
 import SliceShow.Model exposing (Model, currentSlide)
 import SliceShow.SlideData exposing (SlideData)
-import SliceShow.ContentData exposing (ContentData(..), state)
-import SliceShow.State exposing (State(Hidden))
-import Window
-import Json.Decode as Json
+import SliceShow.State exposing (State(..))
 
 
-fit : ( Int, Int ) -> ( Int, Int ) -> Float
-fit ( w1, h1 ) ( w2, h2 ) =
+fit : Int -> Int -> Int -> Int -> Float
+fit w1 h1 w2 h2 =
     if w1 * h2 < w2 * h1 then
         toFloat w1 / toFloat w2
+
     else
         toFloat h1 / toFloat h2
 
 
 toPx : Int -> String
 toPx x =
-    toString x ++ "px"
+    String.fromInt x ++ "px"
 
 
 view : (a -> Html b) -> Model a b -> Html (Message b)
@@ -32,72 +32,60 @@ view renderCustom model =
             viewContainer renderCustom model
 
         Just slide ->
-            viewSlide renderCustom model.dimensions slide
+            viewSlide renderCustom model.width model.height slide
 
 
 viewContainer : (a -> Html b) -> Model a b -> Html (Message b)
 viewContainer renderCustom model =
-    div
-        [ style
-            [ "text-align" => "center" ]
-        ]
+    div [ style "text-align" "center" ]
         (List.indexedMap (viewSlideItem renderCustom) model.slides)
-
-
-(=>) : a -> b -> ( a, b )
-(=>) =
-    (,)
 
 
 viewSlideItem : (a -> Html b) -> Int -> SlideData a b -> Html (Message b)
 viewSlideItem renderCustom index slide =
     div
-        [ style
-            [ "position" => "relative"
-            , "width" => "240px"
-            , "height" => "150px"
-            , "display" => "inline-block"
-            , "margin" => "20px 0 0 20px"
-            , "cursor" => "pointer"
-            ]
-        , onWithOptions
+        [ style "position" "relative"
+        , style "width" "240px"
+        , style "height" "150px"
+        , style "display" "inline-block"
+        , style "margin" "20px 0 0 20px"
+        , style "cursor" "pointer"
+        , custom
             "click"
-            { preventDefault = True
-            , stopPropagation = False
-            }
-            (Messages.Goto index |> Json.succeed)
+            (Json.succeed
+                { preventDefault = True
+                , stopPropagation = False
+                , message = Messages.Goto index
+                }
+            )
         ]
-        [ viewSlide renderCustom (Window.Size 240 150) slide
+        [ viewSlide renderCustom 240 150 slide
         , a
-            [ style
-                [ "position" => "absolute"
-                , "left" => "0"
-                , "top" => "0"
-                , "width" => "240px"
-                , "height" => "150px"
-                ]
-            , href ("#" ++ toString (index + 1))
+            [ style "position" "absolute"
+            , style "left" "0"
+            , style "top" "0"
+            , style "width" "240px"
+            , style "height" "150px"
+            , href ("#" ++ String.fromInt (index + 1))
             ]
             []
         ]
 
 
-viewSlide : (a -> Html b) -> Window.Size -> SlideData a b -> Html (Message b)
-viewSlide renderCustom { width, height } slide =
+viewSlide : (a -> Html b) -> Int -> Int -> SlideData a b -> Html (Message b)
+viewSlide renderCustom width height slide =
     div
-        [ style
-            [ "transform" => ("scale(" ++ toString (fit ( width, height ) slide.dimensions) ++ ")")
-            , "width" => toPx (Tuple.first slide.dimensions)
-            , "height" => toPx (Tuple.second slide.dimensions)
-            , "position" => "absolute"
-            , "left" => "50%"
-            , "top" => "50%"
-            , "margin-left" => toPx (Tuple.first slide.dimensions // -2)
-            , "margin-top" => toPx (Tuple.second slide.dimensions // -2)
-            , "background" => "#fff"
-            , "box-sizing" => "border-box"
-            , "text-align" => "left"
-            ]
+        [ style "transform" ("scale(" ++ String.fromFloat (fit width height slide.width slide.height) ++ ")")
+        , style "width" (toPx slide.width)
+        , style "height" (toPx slide.height)
+        , style "position" "absolute"
+        , style "left" "50%"
+        , style "top" "50%"
+        , style "margin-left" (toPx (slide.width // -2))
+        , style "margin-top" (toPx (slide.height // -2))
+        , style "background" "#fff"
+        , style "box-sizing" "border-box"
+        , style "text-align" "left"
         ]
         (viewElements renderCustom slide.elements)
         |> Html.map Messages.Custom

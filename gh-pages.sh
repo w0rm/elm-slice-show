@@ -6,7 +6,7 @@ rm -rf gh-pages || exit 0;
 mkdir -p gh-pages
 
 cd example
-elm make Main.elm --yes --output assets/elm.js
+elm make Main.elm --optimize --output assets/elm.js
 
 cp -r assets ../gh-pages
 cp index.html ../gh-pages
