@@ -1,8 +1,8 @@
 module SliceShow.Update exposing (update)
 
-import SliceShow.Model as Model exposing (Model)
+import Browser.Navigation as Navigation
 import SliceShow.Messages exposing (Message(..))
-import Navigation
+import SliceShow.Model as Model exposing (Model)
 
 
 update : (b -> a -> ( a, Cmd b )) -> Message b -> Model a b -> ( Model a b, Cmd (Message b) )
@@ -15,30 +15,30 @@ update updateCustom message model =
             withHashChange (Model.prev model)
 
         Index ->
-            withHashChange ({ model | currentSlide = Nothing })
+            withHashChange { model | currentSlide = Nothing }
 
         Goto index ->
-            withHashChange ({ model | currentSlide = Just index })
+            withHashChange { model | currentSlide = Just index }
 
         Open locationHash ->
             ( Model.open locationHash model, Cmd.none )
 
-        Resize dimensions ->
-            ( { model | dimensions = dimensions }, Cmd.none )
+        Resize width height ->
+            ( { model | width = width, height = height }, Cmd.none )
 
         Noop ->
             ( model, Cmd.none )
 
-        Custom message ->
+        Custom msg ->
             let
                 ( newModel, effects ) =
-                    Model.update updateCustom message model
+                    Model.update updateCustom msg model
             in
-                ( newModel, Cmd.map Custom effects )
+            ( newModel, Cmd.map Custom effects )
 
 
 withHashChange : Model a b -> ( Model a b, Cmd (Message b) )
 withHashChange model =
     ( model
-    , Navigation.newUrl (Model.hash model)
+    , Navigation.pushUrl model.key (Model.hash model)
     )

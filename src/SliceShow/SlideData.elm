@@ -1,13 +1,14 @@
-module SliceShow.SlideData exposing (SlideData, hasHiddenElements, next, update, subscriptions)
+module SliceShow.SlideData exposing (SlideData, hasHiddenElements, next, subscriptions, update)
 
-import SliceShow.State exposing (State(Inactive, Hidden))
 import SliceShow.ContentData as Content exposing (ContentData)
+import SliceShow.State exposing (State(..))
 
 
 type alias SlideData a b =
     { state : State
     , elements : List (ContentData a b)
-    , dimensions : ( Int, Int )
+    , width : Int
+    , height : Int
     }
 
 
@@ -17,7 +18,7 @@ update updateCustom customAction slide =
         ( newElements, effects ) =
             Content.update updateCustom customAction slide.elements
     in
-        ( { slide | elements = newElements }, Cmd.batch effects )
+    ( { slide | elements = newElements }, Cmd.batch effects )
 
 
 subscriptions : (a -> Sub b) -> SlideData a b -> Sub b

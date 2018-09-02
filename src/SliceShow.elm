@@ -9,17 +9,21 @@ module SliceShow exposing (Config, init, show, setView, setUpdate, setSubscripti
 
 -}
 
+import Browser
+import Browser.Dom exposing (getViewport)
+import Browser.Events exposing (onKeyDown, onResize)
+import Browser.Navigation exposing (Key)
+import Html exposing (Html, text)
+import Html.Events exposing (keyCode)
+import Json.Decode as Decode
+import SliceShow.Messages as Messages
 import SliceShow.Model as Model
+import SliceShow.Protected exposing (Protected(..))
+import SliceShow.Slide exposing (Slide)
 import SliceShow.Update as Update
 import SliceShow.View as View
-import SliceShow.Slide exposing (Slide)
-import SliceShow.Messages as Messages
-import SliceShow.Protected exposing (Protected(Protected))
-import Keyboard
-import Window
-import Html exposing (Html, text)
-import Navigation
 import Task
+import Url
 
 
 {-| Slideshow Config type
@@ -41,7 +45,7 @@ type alias Message b =
 
 
 type alias PrivateConfig a b =
-    { model : Model a b
+    { model : Key -> Model a b
     , update : b -> a -> ( a, Cmd b )
     , view : a -> Html b
     , subscriptions : a -> Sub b
@@ -54,9 +58,9 @@ init : List (Slide a b) -> Config a b
 init slides =
     Protected
         { model = Model.init (List.map (\(Protected data) -> data) slides)
-        , view = (\_ -> text "")
-        , update = (\_ a -> ( a, Cmd.none ))
-        , subscriptions = (\_ -> Sub.none)
+        , view = \_ -> text ""
+        , update = \_ a -> ( a, Cmd.none )
+        , subscriptions = \_ -> Sub.none
         }
 
 
@@ -87,32 +91,55 @@ main = app.html
 port tasks : Signal (Task.Task Never ())
 port tasks = app.tasks
 -}
-show : Config a b -> Program Never (Model a b) (Messages.Message b)
+show : Config a b -> Program () (Model a b) (Messages.Message b)
 show (Protected { model, update, view, subscriptions }) =
-    Navigation.program
-        (.hash >> Messages.Open)
-        { init = \{ hash } -> ( Model.open hash model, Task.perform Messages.Resize Window.size )
+    Browser.application
+        { init =
+            \_ { fragment } key ->
+                ( Model.open fragment (model key)
+                , Task.perform
+                    (\{ viewport } ->
+                        Messages.Resize
+                            (round viewport.width)
+                            (round viewport.height)
+                    )
+                    getViewport
+                )
         , update = Update.update update
-        , view = View.view view
+        , onUrlChange = .fragment >> Messages.Open
+        , onUrlRequest = always Messages.Noop
+        , view =
+            \model_ ->
+                { title =
+                    case model_.currentSlide of
+                        Just n ->
+                            "Slide " ++ String.fromInt (n + 1)
+
+                        Nothing ->
+                            "Slides"
+                , body = [ View.view view model_ ]
+                }
         , subscriptions =
-            \model ->
+            \model_ ->
                 Sub.batch
-                    [ Keyboard.downs
-                        (\code ->
-                            case code of
-                                37 ->
-                                    Messages.Prev
+                    [ onKeyDown <|
+                        Decode.map
+                            (\code ->
+                                case code of
+                                    37 ->
+                                        Messages.Prev
 
-                                39 ->
-                                    Messages.Next
+                                    39 ->
+                                        Messages.Next
 
-                                27 ->
-                                    Messages.Index
+                                    27 ->
+                                        Messages.Index
 
-                                _ ->
-                                    Messages.Noop
-                        )
-                    , Window.resizes Messages.Resize
-                    , Sub.map Messages.Custom (Model.subscriptions subscriptions model)
+                                    _ ->
+                                        Messages.Noop
+                            )
+                            keyCode
+                    , onResize Messages.Resize
+                    , Sub.map Messages.Custom (Model.subscriptions subscriptions model_)
                     ]
         }
