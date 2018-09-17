@@ -3,7 +3,7 @@
     "name": "w0rm/elm-slice-show",
     "summary": "Elm Slides",
     "license": "BSD-3-Clause",
-    "version": "5.0.1",
+    "version": "5.0.2",
     "exposed-modules": [
         "SliceShow",
         "SliceShow.Slide",

@@ -111,10 +111,10 @@ show (Protected { model, update, view, subscriptions }) =
             \request ->
                 case request of
                     Internal url ->
-                        Messages.NavigateToInternalUrl (Url.toString url)
+                        Messages.NavigateToUrl (Url.toString url)
 
                     External url ->
-                        Messages.NavigateToExternalUrl url
+                        Messages.NavigateToUrl url
         , view =
             \model_ ->
                 { title =

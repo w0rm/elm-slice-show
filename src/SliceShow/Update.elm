@@ -26,10 +26,7 @@ update updateCustom message model =
         Resize width height ->
             ( { model | width = width, height = height }, Cmd.none )
 
-        NavigateToInternalUrl url ->
-            ( model, Navigation.pushUrl model.key url )
-
-        NavigateToExternalUrl url ->
+        NavigateToUrl url ->
             ( model, Navigation.load url )
 
         Noop ->
