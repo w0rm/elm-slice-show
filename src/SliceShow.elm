@@ -1,4 +1,4 @@
-module SliceShow exposing (Config, init, show, setView, setUpdate, setSubscriptions, Model, Message)
+module SliceShow exposing (Config, Message, Model, init, setSubscriptions, setUpdate, setView, show)
 
 {-| This module helps you start your SliceShow application.
 
@@ -9,7 +9,7 @@ module SliceShow exposing (Config, init, show, setView, setUpdate, setSubscripti
 
 -}
 
-import Browser
+import Browser exposing (UrlRequest(..))
 import Browser.Dom exposing (getViewport)
 import Browser.Events exposing (onKeyDown, onResize)
 import Browser.Navigation exposing (Key)
@@ -107,7 +107,14 @@ show (Protected { model, update, view, subscriptions }) =
                 )
         , update = Update.update update
         , onUrlChange = .fragment >> Messages.Open
-        , onUrlRequest = always Messages.Noop
+        , onUrlRequest =
+            \request ->
+                case request of
+                    Internal url ->
+                        Messages.NavigateToInternalUrl (Url.toString url)
+
+                    External url ->
+                        Messages.NavigateToExternalUrl url
         , view =
             \model_ ->
                 { title =

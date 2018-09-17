@@ -10,3 +10,5 @@ type Message b
     | Index
     | Noop
     | Custom b
+    | NavigateToInternalUrl String
+    | NavigateToExternalUrl String
