@@ -1,13 +1,16 @@
 module SliceShow.ContentData exposing (ContentData(..), hasHidden, next, state, subscriptions, update)
 
 import Html exposing (Attribute, Html)
+import SliceShow.Messages as Messages exposing (Message)
 import SliceShow.State exposing (State(..))
 
 
 type ContentData a b
-    = Container State (List (Html b) -> Html b) (List (ContentData a b))
-    | Item State (Html b)
+    = Container State (List (Html (Messages.Message b)) -> Html (Messages.Message b)) (List (ContentData a b))
+    | Item State (Html Never)
     | Custom State a
+    | Prev (List (Attribute Never)) (List (Html Never))
+    | Next (List (Attribute Never)) (List (Html Never))
 
 
 state : ContentData a b -> State
@@ -21,6 +24,12 @@ state element =
 
         Custom state_ _ ->
             state_
+
+        Prev _ _ ->
+            Active
+
+        Next _ _ ->
+            Active
 
 
 hasHidden : List (ContentData a b) -> Bool
@@ -52,6 +61,12 @@ hasHidden elements =
 
                 _ ->
                     hasHidden items || hasHidden rest
+
+        (Prev _ _) :: rest ->
+            hasHidden rest
+
+        (Next _ _) :: rest ->
+            hasHidden rest
 
 
 visited : State -> State
@@ -97,6 +112,12 @@ next elements =
 
                     else
                         Container (visited state_) render items :: next rest
+
+        (Prev attributes html) :: rest ->
+            Prev attributes html :: next rest
+
+        (Next attributes html) :: rest ->
+            Next attributes html :: next rest
 
 
 subscriptions : (a -> Sub b) -> List (ContentData a b) -> List (Sub b)
@@ -167,3 +188,17 @@ update updateCustom action elements =
                     update updateCustom action rest
             in
             ( Item state_ html :: updatedSiblings, siblingsCmd )
+
+        (Prev attributes html) :: rest ->
+            let
+                ( updatedSiblings, siblingsCmd ) =
+                    update updateCustom action rest
+            in
+            ( Prev attributes html :: updatedSiblings, siblingsCmd )
+
+        (Next attributes html) :: rest ->
+            let
+                ( updatedSiblings, siblingsCmd ) =
+                    update updateCustom action rest
+            in
+            ( Next attributes html :: updatedSiblings, siblingsCmd )

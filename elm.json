@@ -5,9 +5,7 @@
     "license": "BSD-3-Clause",
     "version": "5.0.2",
     "exposed-modules": [
-        "SliceShow",
-        "SliceShow.Slide",
-        "SliceShow.Content"
+        "SliceShow"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {

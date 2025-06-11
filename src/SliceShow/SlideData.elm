@@ -1,14 +1,20 @@
-module SliceShow.SlideData exposing (SlideData, hasHiddenElements, next, subscriptions, update)
+module SliceShow.SlideData exposing (SlideData, hasHiddenElements, init, next, subscriptions, update)
 
 import SliceShow.ContentData as Content exposing (ContentData)
+import SliceShow.Messages exposing (Message)
 import SliceShow.State exposing (State(..))
 
 
 type alias SlideData a b =
     { state : State
     , elements : List (ContentData a b)
-    , width : Int
-    , height : Int
+    }
+
+
+init : List (ContentData a b) -> SlideData a b
+init elements =
+    { elements = elements
+    , state = Hidden
     }
 
 

@@ -4,9 +4,7 @@ import Browser.Events exposing (onAnimationFrameDelta)
 import Html exposing (Html, a, div, h1, img, li, p, small, text, ul)
 import Html.Attributes exposing (href, src, style)
 import Markdown
-import SliceShow.Content exposing (..)
-import SliceShow.Slide exposing (..)
-
+import SliceShow exposing (..)
 
 {-| Model type of the custom content
 -}
@@ -29,27 +27,23 @@ type alias CustomContent =
 {-| Type for custom slide
 -}
 type alias CustomSlide =
-    Slide Model Message
+    List (Content Model Message)
 
 
 {-| Update function for the custom content
 -}
 update : Message -> Model -> ( Model, Cmd Message )
-update elapsed time =
-    ( time + elapsed, Cmd.none )
+update dt time =
+    ( time + dt, Cmd.none )
 
 
 {-| View function for the custom content that shows elapsed time for the slide
 -}
 view : Model -> Html Message
 view time =
-    small
-        [ style "position" "absolute", style "bottom" "0", style "right" "0" ]
-        [ text
-            ("the slide is visible for "
-                ++ (round time // 1000 |> String.fromInt)
-                ++ " seconds"
-            )
+    p
+        []
+        [ text ("Elapsed: " ++ (round time // 1000 |> String.fromInt) ++ " seconds")
         ]
 
 
@@ -89,9 +83,9 @@ bullet str = item (li [] [text str])
 bullets : List (Content {} {}) -> Content {} {}
 bullets = container (ul [])
 
-bulletsSlide : Slide {} {}
+bulletsSlide : List (Content {} {})
 bulletsSlide =
-  slide [bullets [bullet "first", bullet "second"]]"""
+    [bullets [bullet "first", bullet "second"]]"""
       ]
     , [ item (h1 [] [ text "Syntax highlight" ])
       , code "elm" """code : String -> String -> Content {} {}
@@ -101,27 +95,32 @@ code lang str =
     ("```" ++ lang ++ "\\n" ++ str ++ "\\n```")
   |> item
 
-codeSlide : Slide {} {}
+codeSlide : List (Content {} {})
 codeSlide =
-  slide
-    [ code "elm" \"\"\"bullet : String -> Content {} {}
+  [ code "elm" \"\"\"bullet : String -> Content {} {}
   bullet str = item (li [] [text str])\"\"\"
-    ]
-      """
+  ]"""
       ]
-    , [ item (h1 [] [ text "Custom slides" ])
+    , [ item (h1 [] [text "Prev and Next buttons"])
+      , code "elm" """nextButton : Content {} {}
+nextButton = next [] [text "Click to go to the next slide"]
+    """
+      , next [] [text "Click to go to the next slide"]
+      ]
+    , [ item (h1 [] [ text "Custom content" ])
       , code "elm" """elapsed : Content Time Time
 elapsed = custom 0
 
-slide : Slide Time Time
-slide = slide [item (text "Elapsed: "), elapsed]
+slide : List (Content {} {})
+slide = [item (text "Elapsed: "), elapsed]
 
 main : Program Never
 main = init [slide]
-  |> setSubscriptions (\\_ -> AnimationFrame.diffs identity)
+  |> setSubscriptions (\\_ -> onAnimationFrameDelta identity)
   |> setUpdate (\\dt time -> (time + dt, Cmd.none))
-  |> setView (\\time -> text (toString time))
+  |> setView (\\time -> text ("Elapsed: " ++ (round time // 1000 |> String.fromInt) ++ " seconds"))
   |> show"""
+      , custom 0
       ]
     , [ item (h1 [] [ text "Questions?" ])
       , item (p [] [ text "elm package install w0rm/elm-slice-show" ])
@@ -152,12 +151,11 @@ code lang str =
     item (Markdown.toHtml [] ("```" ++ lang ++ "\n" ++ str ++ "\n```"))
 
 
-{-| Custom slide that sets the padding and appends the custom content
+{-| Custom slide that sets the padding
 -}
 paddedSlide : List CustomContent -> CustomSlide
 paddedSlide content =
-    slide
-        [ container
-            (div [ style "padding" "50px 100px" ])
-            (content ++ [ custom 0 ])
-        ]
+    [ container
+        (div [ style "padding" "50px 100px" ])
+        content
+    ]

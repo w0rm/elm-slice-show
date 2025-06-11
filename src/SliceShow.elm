@@ -1,11 +1,19 @@
-module SliceShow exposing (Config, Message, Model, init, setSubscriptions, setUpdate, setView, show)
+module SliceShow exposing
+    ( Content, item, container, next, prev, custom, hide
+    , Config, init, show, setView, setUpdate, setSubscriptions, setDimensions, Model, Message
+    )
 
-{-| This module helps you start your SliceShow application.
+{-|
 
 
-# Start your Application
+# Style and structure the content
 
-@docs Config, init, show, setView, setUpdate, setSubscriptions, Model, Message
+@docs Content, item, container, next, prev, custom, hide
+
+
+# Start your application
+
+@docs Config, init, show, setView, setUpdate, setSubscriptions, setDimensions, Model, Message
 
 -}
 
@@ -16,14 +24,78 @@ import Browser.Navigation exposing (Key)
 import Html exposing (Html, text)
 import Html.Events exposing (keyCode)
 import Json.Decode as Decode
+import SliceShow.ContentData exposing (ContentData(..))
 import SliceShow.Messages as Messages
 import SliceShow.Model as Model
 import SliceShow.Protected exposing (Protected(..))
-import SliceShow.Slide exposing (Slide)
+import SliceShow.SlideData as SlideData exposing (SlideData)
+import SliceShow.State exposing (State(..))
 import SliceShow.Update as Update
 import SliceShow.View as View
 import Task
 import Url
+
+
+{-| Content type
+-}
+type alias Content a b =
+    ContentData a b
+
+
+{-| Single content item
+-}
+item : Html Never -> Content a b
+item =
+    Item Inactive
+
+
+{-| A group of content items
+-}
+container : (List (Html (Message b)) -> Html (Message b)) -> List (Content a b) -> Content a b
+container =
+    Container Inactive
+
+
+{-| Next button
+-}
+next : List (Html.Attribute Never) -> List (Html Never) -> Content a b
+next =
+    Next
+
+
+{-| Prev button
+-}
+prev : List (Html.Attribute Never) -> List (Html Never) -> Content a b
+prev =
+    Prev
+
+
+{-| Custom content item
+-}
+custom : a -> Content a b
+custom =
+    Custom Inactive
+
+
+{-| Hide content, except for the prev and next buttons
+-}
+hide : Content a b -> Content a b
+hide content =
+    case content of
+        Container _ render elements ->
+            Container Hidden render elements
+
+        Item _ html ->
+            Item Hidden html
+
+        Custom _ data ->
+            Custom Hidden data
+
+        Prev attrs html ->
+            Prev attrs html
+
+        Next attrs html ->
+            Next attrs html
 
 
 {-| Slideshow Config type
@@ -45,22 +117,24 @@ type alias Message b =
 
 
 type alias PrivateConfig a b =
-    { model : Key -> Model a b
+    { model : Key -> ( Int, Int ) -> Model a b
     , update : b -> a -> ( a, Cmd b )
     , view : a -> Html b
     , subscriptions : a -> Sub b
+    , dimensions : ( Int, Int )
     }
 
 
 {-| Init Model from the list of slides
 -}
-init : List (Slide a b) -> Config a b
+init : List (List (Content a b)) -> Config a b
 init slides =
     Protected
-        { model = Model.init (List.map (\(Protected data) -> data) slides)
+        { model = Model.init (List.map SlideData.init slides)
         , view = \_ -> text ""
         , update = \_ a -> ( a, Cmd.none )
         , subscriptions = \_ -> Sub.none
+        , dimensions = ( 1024, 640 )
         }
 
 
@@ -78,11 +152,19 @@ setUpdate update (Protected config) =
     Protected { config | update = update }
 
 
-{-| Set inputs for the custom content
+{-| Set subscriptions for the custom content
 -}
 setSubscriptions : (a -> Sub b) -> Config a b -> Config a b
 setSubscriptions subscriptions (Protected config) =
     Protected { config | subscriptions = subscriptions }
+
+
+{-| Set custom dimensions for the slide's content.
+The default dimensions are (1024, 640).
+-}
+setDimensions : ( Int, Int ) -> Config a b -> Config a b
+setDimensions dimensions (Protected config) =
+    Protected { config | dimensions = dimensions }
 
 
 {-| Start the SliceShow with your `slides`:
@@ -91,12 +173,12 @@ main = app.html
 port tasks : Signal (Task.Task Never ())
 port tasks = app.tasks
 -}
-show : Config a b -> Program () (Model a b) (Messages.Message b)
-show (Protected { model, update, view, subscriptions }) =
+show : Config a b -> Program () (Model.Model a b) (Messages.Message b)
+show (Protected { model, update, view, subscriptions, dimensions }) =
     Browser.application
         { init =
             \_ { fragment } key ->
-                ( Model.open fragment (model key)
+                ( Model.open fragment (model key dimensions)
                 , Task.perform
                     (\{ viewport } ->
                         Messages.Resize

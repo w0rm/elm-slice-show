@@ -13,6 +13,7 @@ module SliceShow.Model exposing
 
 import Browser.Navigation exposing (Key)
 import Result
+import SliceShow.Messages as Messages exposing (Message)
 import SliceShow.SlideData as Slide exposing (SlideData)
 import String
 
@@ -23,6 +24,7 @@ type alias Model a b =
     , width : Int
     , height : Int
     , key : Key
+    , dimensions : ( Int, Int )
     }
 
 
@@ -139,11 +141,12 @@ resize width height model =
     { model | width = width, height = height }
 
 
-init : List (SlideData a b) -> Key -> Model a b
-init slides key =
+init : List (SlideData a b) -> Key -> ( Int, Int ) -> Model a b
+init slides key dimensions =
     { currentSlide = Nothing
     , slides = slides
     , width = 0
     , height = 0
+    , dimensions = dimensions
     , key = key
     }
