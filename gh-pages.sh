@@ -16,4 +16,4 @@ cd ../gh-pages
 git init
 git add .
 git commit -m "Deploying to GH Pages"
-git push --force "git@github.com:w0rm/elm-slice-show.git" master:gh-pages
+git push --force "git@github.com:w0rm/elm-slice-show.git" main:gh-pages
